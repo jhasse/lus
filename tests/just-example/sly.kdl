@@ -1,0 +1,22 @@
+b {
+    $ sly build
+}
+
+$ host="$(uname -a)"
+
+// build main
+build {
+    $ cc *.a -o main
+}
+
+// test everything
+test-all {
+    $ sly build
+    $ "./test" --all
+}
+
+// run a specific test
+test {
+    $ sly build
+    $ "./test" --test $args
+}

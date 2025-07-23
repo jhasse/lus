@@ -12,7 +12,7 @@ b {
     $ sly build
 }
 
-$ host=`uname -a`
+$ host="$(uname -a)"
 
 // build main
 build {
