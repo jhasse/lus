@@ -3,8 +3,7 @@ import sys
 import ckdl
 import os
 
-from sly import check_args, main_sly_kdl
-
+from .SlyFile import SlyFile
 
 try:
     MAX_DEPTH = 50
@@ -23,9 +22,7 @@ try:
         else:
             break
 
-    main_sly_kdl = ckdl.parse(content).nodes
-
-    check_args(main_sly_kdl, sys.argv[1:], True)
+    file = SlyFile(content)
 except subprocess.CalledProcessError as e:
     sys.exit(e.returncode)
 except FileNotFoundError as e:
