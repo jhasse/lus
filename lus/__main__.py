@@ -3,14 +3,14 @@ import sys
 import ckdl
 import os
 
-from .LosFile import LosFile
+from .LusFile import LusFile
 
 try:
     MAX_DEPTH = 50
     current_filesystem = os.stat(".").st_dev
     for i in range(MAX_DEPTH):
         try:
-            with open("los.kdl", "r") as f:
+            with open("lus.kdl", "r") as f:
                 content = f.read()
         except FileNotFoundError as e:
             if current_filesystem != os.stat("..").st_dev:
@@ -22,7 +22,7 @@ try:
         else:
             break
 
-    file = LosFile(content)
+    file = LusFile(content)
 except subprocess.CalledProcessError as e:
     sys.exit(e.returncode)
 except FileNotFoundError as e:

@@ -5,13 +5,13 @@ import sys
 import ckdl
 
 
-class LosFile:
+class LusFile:
     def __init__(self, content: str):
-        self.main_los_kdl = ckdl.parse(content).nodes
+        self.main_lus_kdl = ckdl.parse(content).nodes
         self.print_commands = False
         self.local_variables = {}
 
-        self.check_args(self.main_los_kdl, sys.argv[1:], True)
+        self.check_args(self.main_lus_kdl, sys.argv[1:], True)
 
     def print_command(self, args: list[str]):
         if self.print_commands:
@@ -37,11 +37,11 @@ class LosFile:
                         raise SystemExit(1)
             else:
                 raise NotImplementedError(f"test {args[1]} not implemented")
-        elif args[0] == "los":
+        elif args[0] == "lus":
             old_cwd = os.getcwd()
             # print_command(args)
             try:
-                self.check_args(self.main_los_kdl, args[1:], True)
+                self.check_args(self.main_lus_kdl, args[1:], True)
             except SystemExit as e:
                 if e.code != 0:
                     raise SystemExit(e.code)
@@ -69,7 +69,7 @@ class LosFile:
         # Flags for this subcommand, i.e. ["--release"]
         flags = []
 
-        # Everything after the last flag. For example, if the command is `los build --release foo bar
+        # Everything after the last flag. For example, if the command is `lus build --release foo bar
         # -v`, then this will contain `["foo", "bar", "-v"]`.
         remaining_args_without_flags = []
 

@@ -1,5 +1,5 @@
 b {
-    $ los build
+    $ lus build
 }
 
 $ host="$(uname -a)"
@@ -11,12 +11,12 @@ build {
 
 // test everything
 test-all {
-    $ los build
+    $ lus build
     $ "./test" --all
 }
 
 // run a specific test
 test {
-    $ los build
+    $ lus build
     $ "./test" --test $args
 }
