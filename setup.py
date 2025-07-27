@@ -3,16 +3,16 @@ from setuptools import setup
 VERSION='0.1.0' # also see __init__.py
 
 setup(
-    name='sly',
+    name='los',
     version=VERSION,
     author="Jan Niklas Hasse",
     author_email="jhasse@bixense.com",
-    url="https://bixense.com/sly",
-    download_url='https://github.com/jhasse/sly/archive/v{}.tar.gz'.format(VERSION),
+    url="https://bixense.com/los",
+    download_url='https://github.com/jhasse/los/archive/v{}.tar.gz'.format(VERSION),
     description="A simple task-runner using KDL for configuration",
-    packages=['sly'],
+    packages=['los'],
     entry_points={
-        'console_scripts': ['sly = sly:__main__'],
+        'console_scripts': ['los = los:__main__'],
     },
     install_requires=[
         'ckdl',

@@ -3,14 +3,14 @@ import sys
 import ckdl
 import os
 
-from .SlyFile import SlyFile
+from .LosFile import LosFile
 
 try:
     MAX_DEPTH = 50
     current_filesystem = os.stat(".").st_dev
     for i in range(MAX_DEPTH):
         try:
-            with open("sly.kdl", "r") as f:
+            with open("los.kdl", "r") as f:
                 content = f.read()
         except FileNotFoundError as e:
             if current_filesystem != os.stat("..").st_dev:
@@ -22,7 +22,7 @@ try:
         else:
             break
 
-    file = SlyFile(content)
+    file = LosFile(content)
 except subprocess.CalledProcessError as e:
     sys.exit(e.returncode)
 except FileNotFoundError as e:
