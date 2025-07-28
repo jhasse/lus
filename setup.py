@@ -12,7 +12,7 @@ setup(
     description="A simple task-runner using KDL for configuration",
     packages=['lus'],
     entry_points={
-        'console_scripts': ['lus = lus:__main__'],
+        'console_scripts': ['lus = lus:main'],
     },
     install_requires=[
         'ckdl',
