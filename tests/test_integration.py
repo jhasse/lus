@@ -9,7 +9,7 @@ def test_just_example():
         [sys.executable, "-m", "lus", "non_existing"],
         capture_output=True,
         text=True,
-        env=os.environ | {"PYTHONPATH": os.pathsep.join(sys.path)},
+        env=os.environ | {"PYTHONPATH": os.path.join(os.path.dirname(__file__), "..")},
     )
     assert result.returncode == 1
     assert result.stderr == ""
