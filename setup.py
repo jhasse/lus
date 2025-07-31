@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION='0.1.0' # also see __init__.py
+VERSION='0.1.1' # also see __init__.py
 
 setup(
     name='lus',
