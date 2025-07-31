@@ -3,15 +3,50 @@ import subprocess
 import sys
 
 
-def test_just_example():
-    os.chdir(os.path.join(os.path.dirname(__file__), "just-example"))
-    result = subprocess.run(
-        [sys.executable, "-m", "lus", "non_existing"],
+def lus(*args):
+    """Run the lus command with the given arguments."""
+    return subprocess.run(
+        [sys.executable, "-m", "lus"] + list(args),
         capture_output=True,
         text=True,
         env=os.environ | {"PYTHONPATH": os.path.join(os.path.dirname(__file__), "..")},
     )
+
+
+def test_args():
+    os.chdir(os.path.join(os.path.dirname(__file__), "args"))
+
+    result = lus("forward", "print('Hello, World!')")
+    assert result.stderr == ""
+    assert result.stdout == "Hello, World!\n"
+    assert result.returncode == 0
+
+    result = lus("forward", "print('Hello,", "World!')")
+    assert (
+        result.stderr
+        == """  File "<string>", line 1
+    print('Hello,
+          ^
+SyntaxError: unterminated string literal (detected at line 1)
+"""
+    )
+    assert result.stdout == ""
     assert result.returncode == 1
+
+    # result = lus("inside", "['x', 'y']")
+    # assert result.stderr == ""
+    # assert result.stdout == "x y\n"
+    # assert result.returncode == 0
+
+    result = lus("unused", "foo")
+    assert result.stderr == ""
+    assert result.stdout == "\x1b[1;31merror:\x1b[0m Unexpected argument: foo\n"
+    assert result.returncode == 1
+
+
+def test_just_example():
+    os.chdir(os.path.join(os.path.dirname(__file__), "just-example"))
+    result = lus("non_existing")
     assert result.stderr == ""
     assert (
         result.stdout
@@ -22,3 +57,4 @@ def test_just_example():
     \x1b[1;34mtest\x1b[0m
 """
     )
+    assert result.returncode == 1

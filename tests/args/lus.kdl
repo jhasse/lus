@@ -1,0 +1,15 @@
+// forward all args to a command
+forward {
+    $ python -c $args
+}
+
+// $args is inside an argument
+inside {
+    $ python -c "print(' '.join($args))"
+}
+
+// doesn't use $args, so it should error when additional args are passed
+unused {
+    // to be decided: Should the commands run even when args are passed?
+    // $ python -c "print('No args used')"
+}
