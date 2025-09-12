@@ -3,7 +3,20 @@ import shlex
 import subprocess
 import sys
 import ckdl
+import expandvars
 
+class Environment:
+    def __init__(self, variables: dict[str, str]):
+        self.args_used = False
+        self.variables = variables
+        assert "args" in variables
+
+    def get(self, key: str, fallback: str = None) -> str:
+        if key in self.variables:
+            if key == "args":
+                self.args_used = True
+            return self.variables[key]
+        return os.environ.get(key, fallback)
 
 class LusFile:
     def __init__(self, content: str):
@@ -78,26 +91,26 @@ class LusFile:
                 flags.append(arg)
             else:
                 remaining_args_without_flags.append(arg)
-        remaining_args = args
+        remaining_args = [str(x) for x in args]
 
         subcommand = (
             remaining_args_without_flags[0]
             if remaining_args_without_flags
             else "default"
         )
+        environment = Environment({"args": " ".join(remaining_args), "subcommand": subcommand})
 
         for i, child in enumerate(nodes):
             if child.name == "$":
                 if len(child.args) > 0:
                     cmd = []
                     for arg in child.args:
-                        if arg == "$args":
-                            cmd.extend(remaining_args)
-                            remaining_args = []
-                        elif arg == "$subcommand":
-                            cmd.append(subcommand)
+                        if " " in str(arg):
+                            cmd.extend(arg)
                         else:
-                            cmd.append(arg)
+                            cmd += expandvars.expand(str(arg), environ=environment, nounset=True).split()
+                    if environment.args_used:
+                        remaining_args = []
                     self.run(cmd, child.properties)
                 else:
                     self.local_variables.update(child.properties)
