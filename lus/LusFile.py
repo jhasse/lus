@@ -105,6 +105,11 @@ class LusFile:
                 if len(child.args) > 0:
                     cmd = []
                     for arg in child.args:
+                        if arg == "$args":
+                            # special case because it won't be passed as one argument with spaces
+                            environment.args_used = True
+                            cmd.extend(remaining_args)
+                            continue
                         if " " in str(arg):
                             cmd.extend(arg)
                         else:
