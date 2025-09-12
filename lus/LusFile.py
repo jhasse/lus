@@ -110,10 +110,7 @@ class LusFile:
                             environment.args_used = True
                             cmd.extend(remaining_args)
                             continue
-                        if " " in str(arg):
-                            cmd.extend(arg)
-                        else:
-                            cmd += expandvars.expand(str(arg), environ=environment, nounset=True).split()
+                        cmd.append(expandvars.expand(str(arg), environ=environment, nounset=True))
                     if environment.args_used:
                         remaining_args = []
                     self.run(cmd, child.properties)

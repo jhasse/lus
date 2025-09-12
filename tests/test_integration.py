@@ -33,10 +33,10 @@ SyntaxError: unterminated string literal (detected at line 1)
     assert result.stdout == ""
     assert result.returncode == 1
 
-    # result = lus("inside", "['x', 'y']")
-    # assert result.stderr == ""
-    # assert result.stdout == "x y\n"
-    # assert result.returncode == 0
+    result = lus("inside", "['x', 'y']")
+    assert result.stderr == ""
+    assert result.stdout == "x y\n"
+    assert result.returncode == 0
 
     result = lus("unused", "foo")
     assert result.stderr == ""

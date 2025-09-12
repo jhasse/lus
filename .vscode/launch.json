@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "tests/args",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "lus",
+            "args": ["inside", "['x', 'y']"],
+            "cwd": "${workspaceFolder}/tests/args",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ]
+}
