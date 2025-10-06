@@ -23,6 +23,7 @@ class LusFile:
         self.main_lus_kdl = ckdl.parse(content).nodes
         self.print_commands = False
         self.local_variables = {}
+        self._old_working_directory = os.getcwd()
 
         self.check_args(self.main_lus_kdl, sys.argv[1:], True)
 
@@ -35,6 +36,10 @@ class LusFile:
             raise SystemExit(args[1])
         elif args[0] == "cd":
             self.print_command(args)
+            if len(args) == 2 and args[1] == "-":
+                os.chdir(self._old_working_directory)
+                return
+            self._old_working_directory = os.getcwd()
             os.chdir(args[1])
         elif args[0] == "test":
             if args[1] == "-f" or args[1] == "-d":
