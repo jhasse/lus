@@ -14,4 +14,5 @@ jobs:
           persist-credentials: false
       - name: Run tests
         run: |
+          pip install -r requirements.txt
           pytest
