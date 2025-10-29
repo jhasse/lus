@@ -8,7 +8,7 @@ jobs:
       image: fedora:43
     steps:
       - name: Install dependencies
-        run: dnf install -y git python3-pytest python3-pip
+        run: dnf install -y git python3-pytest python3-pip gcc
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
