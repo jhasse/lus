@@ -5,8 +5,22 @@
             "type": "debugpy",
             "request": "launch",
             "module": "lus",
-            "args": ["inside", "['x', 'y']"],
+            "args": [
+                "inside",
+                "['x', 'y']"
+            ],
             "cwd": "${workspaceFolder}/tests/args",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "tests/subcommand-env-var",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "lus",
+            "args": [],
+            "cwd": "${workspaceFolder}/tests/subcommand-env-var",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }

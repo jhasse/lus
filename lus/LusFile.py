@@ -53,8 +53,14 @@ class LusFile:
                         self.run(args[4:], properties)
                     else:
                         raise SystemExit(1)
+            elif args[1] == "-z" and len(args) >= 4 and args[3] in ["&&", "||"]:
+                empty = len(args[2]) == 0
+                if args[3] == "&&" and empty:
+                    self.run(args[4:], properties)
+                elif args[3] == "||" and not empty:
+                    self.run(args[4:], properties)
             else:
-                raise NotImplementedError(f"test {args[1]} not implemented")
+                raise NotImplementedError(f"test {args[1:]} not implemented")
         elif args[0] == "lus":
             old_cwd = os.getcwd()
             # print_command(args)
@@ -101,7 +107,7 @@ class LusFile:
         subcommand = (
             remaining_args_without_flags[0]
             if remaining_args_without_flags
-            else "default"
+            else ""
         )
         environment = Environment({"args": " ".join(remaining_args), "subcommand": subcommand})
 
@@ -125,7 +131,7 @@ class LusFile:
                 try:
                     remaining_args.remove(subcommand)
                 except ValueError as e:
-                    if subcommand != "default":
+                    if subcommand != "":
                         raise e
                 self.check_args(child.children, remaining_args, i == len(nodes) - 1)
                 remaining_args = []
@@ -139,7 +145,7 @@ class LusFile:
                 if len(child.name) > 0
                 and child.name != "$"
                 and child.name[0] != "-"
-                and child.name != "default"
+                and child.name != ""
             ]
             if len(available_subcommands) == 0:
                 print(

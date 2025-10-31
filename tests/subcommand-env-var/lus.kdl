@@ -1,0 +1,17 @@
+$ echo Subcommand $subcommand
+cmd1 {
+    $ echo "1: \\$subcommand is: $subcommand"
+    --some-flag {
+        $ exit 1
+    }
+    cmd4 {
+        $ echo "4: \\$subcommand is: $subcommand"
+    }
+}
+cmd2 {
+    $ echo "2: \\$subcommand is: $subcommand"
+}
+cmd3 {
+    $ echo "Default subcommand"
+}
+$ test -z $subcommand && lus cmd3

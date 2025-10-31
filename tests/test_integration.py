@@ -44,6 +44,33 @@ SyntaxError: unterminated string literal (detected at line 1)
     assert result.returncode == 1
 
 
+def test_subcommand_env_var():
+    os.chdir(os.path.join(os.path.dirname(__file__), "subcommand-env-var"))
+
+    result = lus("cmd1")
+    assert result.stderr == ""
+    assert result.stdout == "Subcommand cmd1\n1: $subcommand is: \n"
+    assert result.returncode == 0
+
+    result = lus("cmd2")
+    assert result.stderr == ""
+    assert result.stdout == "Subcommand cmd2\n2: $subcommand is: \n"
+    assert result.returncode == 0
+
+    result = lus()
+    assert result.stderr == ""
+    assert result.stdout == "Subcommand \nSubcommand cmd3\nDefault subcommand\n"
+    assert result.returncode == 0
+
+    result = lus("cmd1", "cmd4")
+    assert result.stderr == ""
+    assert (
+        result.stdout
+        == "Subcommand cmd1\n1: $subcommand is: cmd4\n4: $subcommand is: \n"
+    )
+    assert result.returncode == 0
+
+
 def test_just_example():
     os.chdir(os.path.join(os.path.dirname(__file__), "just-example"))
     result = lus("non_existing")

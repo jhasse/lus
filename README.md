@@ -31,3 +31,10 @@ test {
     $ "./test" --test $args
 }
 ```
+
+## Special environment variables
+
+| Variable                   | Description                       |
+|----------------------------|-----------------------------------|
+| `$subcommand`              | Current subcommand being executed |
+| `$invocation_directory`    | Directory where `lus` was invoked |
