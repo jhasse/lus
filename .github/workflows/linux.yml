@@ -2,7 +2,21 @@ name: Linux
 on:
   push:
 jobs:
-  build:
+  Python 3.13:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:42
+    steps:
+      - name: Install dependencies
+        run: dnf install -y git python3-pytest python3-pip gcc-c++ python3-devel
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run tests
+        run: |
+          pip install -r requirements.txt
+          pytest
+  Python 3.14:
     runs-on: ubuntu-latest
     container:
       image: fedora:43
