@@ -2,7 +2,7 @@ name: Linux
 on:
   push:
 jobs:
-  python3.13:
+  python3_13:
     runs-on: ubuntu-latest
     container:
       image: fedora:42
@@ -16,7 +16,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pytest
-  python3.14:
+  python3_14:
     runs-on: ubuntu-latest
     container:
       image: fedora:43
