@@ -113,7 +113,7 @@ class LusFile:
 
         child_names = set()
         for i, child in enumerate(nodes):
-            if child.name == "$":
+            if child.name == "$" or child.name == "-":
                 if len(child.args) > 0:
                     cmd = []
                     for arg in child.args:

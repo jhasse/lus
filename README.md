@@ -9,26 +9,26 @@
 
 ```kdl
 b {
-    $ lus build
+    - lus build
 }
 
-$ host="$(uname -a)"
+- host="$(uname -a)"
 
 // build main
 build {
-    $ cc *.a -o main
+    - cc *.a -o main
 }
 
 // test everything
 test-all {
-    $ lus build
-    $ "./test" --all
+    - lus build
+    - "./test" --all
 }
 
 // run a specific test
 test {
-    $ lus build
-    $ "./test" --test $args
+    - lus build
+    - "./test" --test $args
 }
 ```
 

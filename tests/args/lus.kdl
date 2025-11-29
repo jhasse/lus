@@ -5,7 +5,7 @@ forward {
 
 // $args is inside an argument
 inside {
-    $ python -c "print(' '.join($args))"
+    - python -c "print(' '.join($args))"
 }
 
 // doesn't use $args, so it should error when additional args are passed
