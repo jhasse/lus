@@ -111,6 +111,7 @@ class LusFile:
         )
         environment = Environment({"args": " ".join(remaining_args), "subcommand": subcommand})
 
+        child_names = set()
         for i, child in enumerate(nodes):
             if child.name == "$":
                 if len(child.args) > 0:
@@ -127,7 +128,12 @@ class LusFile:
                     self.run(cmd, child.properties)
                 else:
                     self.local_variables.update(child.properties)
-            elif child.name == subcommand:
+                continue
+            if child.name in child_names:
+                print(f"\x1b[1;31merror:\x1b[0m Duplicate node name '{child.name}'", file=sys.stderr)
+                raise SystemExit(1)
+            child_names.add(child.name)
+            if child.name == subcommand:
                 try:
                     remaining_args.remove(subcommand)
                 except ValueError as e:

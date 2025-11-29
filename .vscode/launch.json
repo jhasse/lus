@@ -24,6 +24,17 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }
+        },
+        {
+            "name": "tests/errors",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "lus",
+            "args": [],
+            "cwd": "${workspaceFolder}/tests/errors",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
         }
     ]
 }

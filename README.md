@@ -38,3 +38,14 @@ test {
 |----------------------------|-----------------------------------|
 | `$subcommand`              | Current subcommand being executed |
 | `$invocation_directory`    | Directory where `lus` was invoked |
+
+# Development
+
+Run unit and integration tests:
+
+```
+python -m venv .venv
+.venv/bin/activate.fish
+pip install ckdl expandvars pytest
+pytest
+```

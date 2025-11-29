@@ -85,3 +85,10 @@ def test_just_example():
 """
     )
     assert result.returncode == 1
+
+def test_error():
+    os.chdir(os.path.join(os.path.dirname(__file__), "errors"))
+    result = lus()
+    assert result.stderr == "\x1b[1;31merror:\x1b[0m Duplicate node name 'a'\n"
+    assert result.stdout == ""
+    assert result.returncode == 1
