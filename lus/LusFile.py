@@ -42,6 +42,8 @@ class LusFile:
             self._old_working_directory = os.getcwd()
             os.chdir(args[1])
         elif args[0] == "test":
+            if args[2] in ["&&", "||"]:
+                args.insert(2, "")
             if args[1] == "-f" or args[1] == "-d":
                 exists = os.path.exists(args[2])
                 if (

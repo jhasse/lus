@@ -13,6 +13,20 @@ def lus(*args):
     )
 
 
+def test_default():
+    os.chdir(os.path.join(os.path.dirname(__file__), "default"))
+
+    result = lus()
+    assert result.stderr == ""
+    assert result.stdout == "foo\n"
+    assert result.returncode == 0
+
+    result = lus("foo")
+    assert result.stderr == ""
+    assert result.stdout == "foo\n"
+    assert result.returncode == 0
+
+
 def test_args():
     os.chdir(os.path.join(os.path.dirname(__file__), "args"))
 
