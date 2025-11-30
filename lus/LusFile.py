@@ -136,9 +136,8 @@ class LusFile:
             if child.name == subcommand:
                 try:
                     remaining_args.remove(subcommand)
-                except ValueError as e:
-                    if subcommand != "":
-                        raise e
+                except ValueError:
+                    pass # if there was a script line before that used $args, it may already be removed
                 self.check_args(child.children, remaining_args, i == len(nodes) - 1)
                 remaining_args = []
             elif child.name in flags:
