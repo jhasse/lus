@@ -2,21 +2,22 @@ name: Linux
 on:
   push:
 jobs:
-  python3_6:
+  python3_12:
     runs-on: ubuntu-latest
     container:
       image: almalinux:8
     steps:
       - name: Install dependencies
-        run: dnf install -y git python3-pytest python3-pip gcc-c++ python3-devel python3-pip
+        run: dnf install -y git python3.12-pip gcc-c++ python3.12-devel
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Run tests
         run: |
-          pip3 install --upgrade pip
+          alternatives --set python /usr/bin/python3
           pip3 install -r requirements.txt
-          pytest-3
+          pip3 install pytest
+          pytest
   python3_13:
     runs-on: ubuntu-latest
     container:
