@@ -1,5 +1,6 @@
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import ckdl
@@ -88,6 +89,25 @@ class LusFile:
             self.print_command(args)
             subprocess.check_call([os.path.join(os.getcwd(), args[0])] + args[1:])
         else:
+            if not shutil.which(args[0]): # check if args[0] is in PATH
+                if sys.platform == "darwin": # only macOS
+                    brew_path = shutil.which("brew")
+                    if brew_path:
+                        result = subprocess.check_output(
+                            [brew_path, "which-formula", args[0]],
+                            text=True
+                        )
+                        formula = result.strip()
+                        if formula:
+                            # ask [Y/n] if to install it now:
+                            response = input(
+                                f"\x1b[1;33mwarning:\x1b[0m Command '{args[0]}' not found. "
+                                f"It is provided by the Homebrew package '\x1b[1;34m{formula}\x1b[0m'. "
+                                "Do you want to install it now? [Y/n] "
+                            )
+                            if response.lower() in ["", "y", "yes"]:
+                                self.print_command([brew_path, "install", formula])
+                                subprocess.check_call([brew_path, "install", formula])
             self.print_command(args)
             subprocess.check_call(args)
 
