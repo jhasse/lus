@@ -5,9 +5,10 @@ import subprocess
 import sys
 import ckdl
 import expandvars
+from typing import Dict, List
 
 class Environment:
-    def __init__(self, variables: dict[str, str]):
+    def __init__(self, variables: Dict[str, str]):
         self.args_used = False
         self.variables = variables
         assert "args" in variables
@@ -28,11 +29,11 @@ class LusFile:
 
         self.check_args(self.main_lus_kdl, sys.argv[1:], True)
 
-    def print_command(self, args: list[str]):
+    def print_command(self, args: List[str]):
         if self.print_commands:
             print(f"\x1b[1;34m$ {shlex.join(args)}\x1b[0m")
 
-    def run(self, args: list[str], properties: dict[str, str]):
+    def run(self, args: List[str], properties: Dict[str, str]):
         if args[0] == "exit":
             raise SystemExit(args[1])
         elif args[0] == "cd":
@@ -111,7 +112,7 @@ class LusFile:
             self.print_command(args)
             subprocess.check_call(args)
 
-    def check_args(self, nodes, args: list[str], check_if_args_handled: bool):
+    def check_args(self, nodes, args: List[str], check_if_args_handled: bool):
         # Flags for this subcommand, i.e. ["--release"]
         flags = []
 
