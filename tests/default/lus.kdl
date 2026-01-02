@@ -1,5 +1,6 @@
 $ set +x
-$ test -z $args && lus foo
+$ test -n $subcommand || lus foo
 foo {
    $ echo "foo"
+   $ test -z $args || echo $args
 }

@@ -5,7 +5,7 @@ import subprocess
 import sys
 import ckdl
 import expandvars
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 class Environment:
     def __init__(self, variables: Dict[str, str]):
@@ -27,25 +27,87 @@ class LusFile:
         self.local_variables = {}
         self._old_working_directory = os.getcwd()
 
-        self.check_args(self.main_lus_kdl, sys.argv[1:], True)
+        if self.main_lus_kdl:
+            self.check_args(self.main_lus_kdl, sys.argv[1:], True)
 
     def print_command(self, args: List[str]):
         if self.print_commands:
             print(f"\x1b[1;34m$ {shlex.join(args)}\x1b[0m")
 
     def run(self, args: List[str], properties: Dict[str, str]):
+        if "&&" in args or "||" in args:
+            return self._run_chained(args, properties)
+        status, _ = self._run_single(args, properties)
+        if status != 0:
+            raise SystemExit(status)
+
+    def _run_chained(self, args: List[str], properties: Dict[str, str]):
+        segments = []
+        operators = []
+        current = []
+
+        for arg in args:
+            if arg in ("&&", "||"):
+                if len(current) == 0:
+                    raise SystemExit(1)
+                segments.append(current)
+                operators.append(arg)
+                current = []
+            else:
+                current.append(arg)
+
+        if len(current) == 0:
+            raise SystemExit(1)
+        segments.append(current)
+
+        last_status = 0
+
+        for i, segment in enumerate(segments):
+            try:
+                status, condition = self._run_single(segment, properties)
+            except SystemExit as e:
+                status = e.code
+                condition = status == 0
+                if len(segment) > 0 and segment[0] == "exit":
+                    raise
+            except subprocess.CalledProcessError as e:
+                status = e.returncode
+                condition = False
+
+            last_status = status
+
+            if i < len(operators):
+                op = operators[i]
+                if op == "&&":
+                    if condition:
+                        continue
+                    if status != 0:
+                        raise SystemExit(status)
+                    return
+                if op == "||":
+                    if condition:
+                        return
+                    continue
+
+        if last_status != 0:
+            raise SystemExit(last_status)
+
+    def _run_single(
+        self, args: List[str], properties: Dict[str, str]
+    ) -> Tuple[int, bool]:
         if args[0] == "exit":
             raise SystemExit(args[1])
         elif args[0] == "cd":
             self.print_command(args)
             if len(args) == 2 and args[1] == "-":
                 os.chdir(self._old_working_directory)
-                return
+                return 0, True
             self._old_working_directory = os.getcwd()
             os.chdir(args[1])
+            return 0, True
         elif args[0] == "test":
-            if args[2] in ["&&", "||"]:
-                args.insert(2, "")
+            if len(args) < 3:
+                raise NotImplementedError(f"test {args[1:]} not implemented")
             if args[1] == "-f" or args[1] == "-d":
                 exists = os.path.exists(args[2])
                 if (
@@ -53,18 +115,21 @@ class LusFile:
                     or (args[1] == "-f" and not os.path.isfile(args[2]))
                     or (args[1] == "-d" and not os.path.isdir(args[2]))
                 ):
-                    if len(args) > 3 and args[3] == "||":
-                        self.run(args[4:], properties)
-                    else:
-                        raise SystemExit(1)
-            elif args[1] == "-z" and len(args) >= 4 and args[3] in ["&&", "||"]:
+                    raise SystemExit(1)
+                return 0, True
+            elif args[1] == "-z":
                 empty = len(args[2]) == 0
-                if args[3] == "&&" and empty:
-                    self.run(args[4:], properties)
-                elif args[3] == "||" and not empty:
-                    self.run(args[4:], properties)
+                if empty:
+                    return 0, True
+                return 0, False
+            elif args[1] == "-n":
+                not_empty = len(args[2]) > 0
+                if not_empty:
+                    return 0, True
+                return 0, False
             else:
                 raise NotImplementedError(f"test {args[1:]} not implemented")
+            return 0, True
         elif args[0] == "lus":
             old_cwd = os.getcwd()
             # print_command(args)
@@ -75,9 +140,11 @@ class LusFile:
                     raise SystemExit(e.code)
             finally:
                 os.chdir(old_cwd)
+            return 0, True
         elif args[0] == "export":
             self.print_command(args + [f"{k}={v}" for k, v in properties.items()])
             os.environ.update(properties)
+            return 0, True
         elif args[0] == "set":
             global print_commands
             if args[1] == "-x":
@@ -86,9 +153,11 @@ class LusFile:
                 print_commands = False
             else:
                 raise NotImplementedError(f"set {args[1]} not implemented")
+            return 0, True
         elif "/" in args[0] and not os.path.isabs(args[0]):
             self.print_command(args)
             subprocess.check_call([os.path.join(os.getcwd(), args[0])] + args[1:])
+            return 0, True
         else:
             if not shutil.which(args[0]): # check if args[0] is in PATH
                 if sys.platform == "darwin": # only macOS
@@ -111,6 +180,7 @@ class LusFile:
                                 subprocess.check_call([brew_path, "install", formula])
             self.print_command(args)
             subprocess.check_call(args)
+            return 0, True
 
     def check_args(self, nodes, args: List[str], check_if_args_handled: bool):
         # Flags for this subcommand, i.e. ["--release"]
@@ -134,6 +204,12 @@ class LusFile:
         )
         environment = Environment({"args": " ".join(remaining_args), "subcommand": subcommand})
 
+        subcommand_exists = any(
+            child.name == subcommand
+            for child in nodes
+            if len(child.name) > 0 and child.name not in ("$", "-")
+        )
+
         child_names = set()
         for i, child in enumerate(nodes):
             if child.name == "$" or child.name == "-":
@@ -143,10 +219,13 @@ class LusFile:
                         if arg == "$args":
                             # special case because it won't be passed as one argument with spaces
                             environment.args_used = True
-                            cmd.extend(remaining_args)
+                            if len(remaining_args) == 0:
+                                cmd.append("")
+                            else:
+                                cmd.extend(remaining_args)
                             continue
                         cmd.append(expandvars.expand(str(arg), environ=environment, nounset=True))
-                    if environment.args_used:
+                    if environment.args_used and not subcommand_exists:
                         remaining_args = []
                     self.run(cmd, child.properties)
                 else:
