@@ -62,6 +62,16 @@ SyntaxError: unterminated string literal (detected at line 1)
     assert result.stdout == "\x1b[1;31merror:\x1b[0m Unexpected argument: foo\n"
     assert result.returncode == 1
 
+    result = lus("count", "a", "b", "c")
+    assert result.stderr == ""
+    assert result.stdout == "4\n"
+    assert result.returncode == 0
+
+    result = lus("count")
+    assert result.stderr == ""
+    assert result.stdout == "1\n"
+    assert result.returncode == 0
+
 
 def test_subcommand_env_var():
     os.chdir(os.path.join(os.path.dirname(__file__), "subcommand-env-var"))

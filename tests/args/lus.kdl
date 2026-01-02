@@ -13,3 +13,7 @@ unused {
     // to be decided: Should the commands run even when args are passed?
     // $ python -c "print('No args used')"
 }
+
+count {
+    - python -c "import sys; print(len(sys.argv))" $args
+}

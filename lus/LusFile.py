@@ -220,7 +220,9 @@ class LusFile:
                             # special case because it won't be passed as one argument with spaces
                             environment.args_used = True
                             if len(remaining_args) == 0:
-                                cmd.append("")
+                                # Only keep a placeholder when the target command needs an argument (e.g., test -n $args)
+                                if len(cmd) > 0 and cmd[0] == "test":
+                                    cmd.append("")
                             else:
                                 cmd.extend(remaining_args)
                             continue
@@ -240,7 +242,8 @@ class LusFile:
                     remaining_args.remove(subcommand)
                 except ValueError:
                     pass # if there was a script line before that used $args, it may already be removed
-                self.check_args(child.children, remaining_args, i == len(nodes) - 1)
+                # Once we've matched the subcommand, enforce leftover-argument checks inside it
+                self.check_args(child.children, remaining_args, True)
                 remaining_args = []
             elif child.name in flags:
                 remaining_args.remove(child.name)
