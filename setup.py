@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import setup
 
-VERSION = "0.2.1"  # also see __init__.py
+VERSION = "0.3.0"  # also see __init__.py
 
 README = Path(__file__).parent / "README.md"
 long_description = README.read_text(encoding="utf-8")
