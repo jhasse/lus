@@ -46,6 +46,6 @@ Run unit and integration tests:
 ```
 python -m venv .venv
 . .venv/bin/activate.fish
-pip install ckdl expandvars pytest
+pip install kdl-py expandvars pytest
 pytest
 ```

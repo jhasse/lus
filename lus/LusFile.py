@@ -3,15 +3,116 @@ import shlex
 import shutil
 import subprocess
 import sys
-import ckdl
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
+
 import expandvars
-from typing import Dict, List, Tuple
+import kdl
+
+
+@dataclass
+class NormalizedNode:
+    name: str
+    args: List[Any]
+    properties: Dict[str, Any]
+    children: List["NormalizedNode"]
+
+
+def _normalize_value(value):
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def _normalize_node(node) -> NormalizedNode:
+    props = getattr(node, "properties", getattr(node, "props", {}))
+    children = getattr(node, "children", getattr(node, "nodes", []))
+    return NormalizedNode(
+        name=getattr(node, "name", ""),
+        args=[_normalize_value(arg) for arg in getattr(node, "args", [])],
+        properties={k: _normalize_value(v) for k, v in props.items()},
+        children=[_normalize_node(child) for child in children],
+    )
+
+
+def _normalize_nodes(nodes) -> List[NormalizedNode]:
+    return [_normalize_node(node) for node in nodes]
+
+
+_KDL_PATCHED = False
+
+
+def _ensure_kdl_supports_bare_identifiers():
+    global _KDL_PATCHED
+    if _KDL_PATCHED:
+        return
+
+    from kdl import converters
+    from kdl import parsefuncs
+    from kdl.errors import ParseError, ParseFragment
+    from kdl.result import Failure, Result
+    from kdl import types as kdl_types
+
+    def parse_value_with_bare_identifiers(stream, start):
+        tag, i = parsefuncs.parseTag(stream, start)
+        if tag is Failure:
+            tag = None
+
+        value_start = i
+        val, i = parsefuncs.parseNumber(stream, i)
+        if val is Failure:
+            val, i = parsefuncs.parseKeyword(stream, i)
+            if val is Failure:
+                val, i = parsefuncs.parseString(stream, i)
+                if val is Failure:
+                    ident, ident_end = parsefuncs.parseIdent(stream, i)
+                    if ident is not Failure:
+                        val = kdl_types.String(ident)
+                        i = ident_end
+
+        if val is not Failure:
+            val.tag = tag
+            for key, converter in stream.config.valueConverters.items():
+                if val.matchesKey(key):
+                    val = converter(
+                        val,
+                        ParseFragment(stream[value_start:i], stream, i),
+                    )
+                    if val == NotImplemented:
+                        continue
+                    else:
+                        break
+            else:
+                if tag is None and stream.config.nativeUntaggedValues:
+                    val = val.value
+                if tag is not None and stream.config.nativeTaggedValues:
+                    val = converters.toNative(
+                        val,
+                        ParseFragment(stream[value_start:i], stream, i),
+                    )
+            return Result((None, val), i)
+
+        if stream[i] == "'":
+            raise ParseError(stream, i, "KDL strings use double-quotes.")
+
+        ident, _ = parsefuncs.parseBareIdent(stream, i)
+        if ident is not Failure and ident.lower() in ("true", "false", "null"):
+            raise ParseError(stream, i, "KDL keywords are lower-case.")
+
+        if tag is not None:
+            raise ParseError(stream, i, "Found a tag, but no value following it.")
+        return Result.fail(start)
+
+    parsefuncs.parseValue = parse_value_with_bare_identifiers
+    _KDL_PATCHED = True
+
 
 class Environment:
     def __init__(self, variables: Dict[str, str]):
         self.args_used = False
         self.variables = variables
         assert "args" in variables
+
 
     def get(self, key: str, fallback: str = None) -> str:
         if key in self.variables:
@@ -22,7 +123,8 @@ class Environment:
 
 class LusFile:
     def __init__(self, content: str):
-        self.main_lus_kdl = ckdl.parse(content).nodes
+        _ensure_kdl_supports_bare_identifiers()
+        self.main_lus_kdl = _normalize_nodes(kdl.parse(content).nodes)
         self.print_commands = False
         self.local_variables = {}
         self._old_working_directory = os.getcwd()

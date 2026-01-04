@@ -22,7 +22,7 @@ setup(
         "console_scripts": ["lus = lus:main"],
     },
     install_requires=[
-        "ckdl",
+        "kdl-py",
         "expandvars",
     ],
 )

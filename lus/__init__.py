@@ -1,7 +1,8 @@
 import subprocess
 import sys
-import ckdl
 import os
+
+from kdl.errors import ParseError
 
 from .LusFile import LusFile
 
@@ -31,6 +32,6 @@ def main():
         sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(130)
-    except ckdl.ParseError as e:
-        print(f"\x1b[1;31merror:\x1b[0m {e}", file=sys.stderr)
+    except ParseError as e:
+        print(f"\x1b[1;31merror:\x1b[0m lus.kdl:{e}", file=sys.stderr)
         sys.exit(1)
