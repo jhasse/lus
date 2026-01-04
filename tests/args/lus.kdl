@@ -1,3 +1,5 @@
+- set +x
+
 // forward all args to a command
 forward {
     $ python -c $args

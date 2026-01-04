@@ -115,6 +115,25 @@ def test_just_example():
     )
     assert result.returncode == 1
 
+
+def test_print_commands():
+    os.chdir(os.path.join(os.path.dirname(__file__), "print-commands"))
+    result = lus("verbose")
+    assert result.stderr == ""
+    assert (
+        result.stdout
+        == """echo 'Shows this text and the echo command'
+Shows this text and the echo command
+"""
+    )
+    assert result.returncode == 0
+
+    result = lus("silent")
+    assert result.stderr == ""
+    assert result.stdout == "Only shows this text, not the echo command\n"
+    assert result.returncode == 0
+
+
 def test_error():
     os.chdir(os.path.join(os.path.dirname(__file__), "errors"))
     result = lus()

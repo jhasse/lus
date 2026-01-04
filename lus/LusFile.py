@@ -1,4 +1,5 @@
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -125,8 +126,9 @@ class LusFile:
     def __init__(self, content: str):
         _ensure_kdl_supports_bare_identifiers()
         self.main_lus_kdl = _normalize_nodes(kdl.parse(content).nodes)
-        self.print_commands = False
+        self.print_commands = True
         self.local_variables = {}
+        self._piped = not sys.stdout.isatty()
         self._old_working_directory = os.getcwd()
 
         if self.main_lus_kdl:
@@ -134,7 +136,14 @@ class LusFile:
 
     def print_command(self, args: List[str]):
         if self.print_commands:
-            print(f"\x1b[1;34m$ {shlex.join(args)}\x1b[0m")
+            self._print(f"\x1b[1m{shlex.join(args)}\x1b[0m")
+
+    def _print(self, message: str):
+        if self._piped:
+            # strip ANSI escape codes
+            ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+            message = ansi_escape.sub('', message)
+        print(message, flush=True)
 
     def run(self, args: List[str], properties: Dict[str, str]):
         if "&&" in args or "||" in args:
@@ -248,11 +257,10 @@ class LusFile:
             os.environ.update(properties)
             return 0, True
         elif args[0] == "set":
-            global print_commands
             if args[1] == "-x":
-                print_commands = True
+                self.print_commands = True
             elif args[1] == "+x":
-                print_commands = False
+                self.print_commands = False
             else:
                 raise NotImplementedError(f"set {args[1]} not implemented")
             return 0, True

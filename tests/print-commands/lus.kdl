@@ -1,0 +1,8 @@
+silent {
+    - set +x
+    - echo "Only shows this text, not the echo command"
+}
+verbose {
+    - set -x
+    - echo "Shows this text and the echo command"
+}
