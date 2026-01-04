@@ -1,0 +1,12 @@
+- set +x
+
+subcommand {
+    - echo "Inside subcommand"
+    - exit 0
+}
+subcommand-fail {
+    - echo "Inside subcommand-fail"
+    - exit 42
+}
+- lus subcommand
+- echo "After subcommand, should be printed because exit of previous line was 0"

@@ -100,6 +100,20 @@ def test_subcommand_env_var():
     assert result.returncode == 0
 
 
+def test_exit():
+    os.chdir(os.path.join(os.path.dirname(__file__), "exit"))
+
+    result = lus("subcommand")
+    assert result.stderr == ""
+    assert result.stdout == "Inside subcommand\nAfter subcommand, should be printed because exit of previous line was 0\n"
+    assert result.returncode == 0
+
+    result = lus("subcommand-fail")
+    assert result.stderr == ""
+    assert result.stdout == "Inside subcommand-fail\n"
+    assert result.returncode == 42
+
+
 def test_just_example():
     os.chdir(os.path.join(os.path.dirname(__file__), "just-example"))
     result = lus("non_existing")

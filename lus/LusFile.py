@@ -207,7 +207,12 @@ class LusFile:
         self, args: List[str], properties: Dict[str, str]
     ) -> Tuple[int, bool]:
         if args[0] == "exit":
-            raise SystemExit(args[1])
+            code = args[1] if len(args) > 1 else 0
+            try:
+                code = int(code)
+            except (ValueError, TypeError):
+                pass
+            raise SystemExit(code)
         elif args[0] == "cd":
             self.print_command(args)
             if len(args) == 2 and args[1] == "-":
@@ -313,6 +318,7 @@ class LusFile:
             else ""
         )
         environment = Environment({"args": " ".join(remaining_args), "subcommand": subcommand})
+        subcommand_executed = False
 
         subcommand_exists = any(
             child.name == subcommand
@@ -339,6 +345,8 @@ class LusFile:
                         cmd.append(expandvars.expand(str(arg), environ=environment, nounset=True))
                     if environment.args_used and not subcommand_exists:
                         remaining_args = []
+                    if subcommand_executed and len(cmd) > 1 and cmd[0] == "lus" and cmd[1] == subcommand:
+                        continue
                     self.run(cmd, child.properties)
                 else:
                     self.local_variables.update(child.properties)
@@ -352,8 +360,14 @@ class LusFile:
                     remaining_args.remove(subcommand)
                 except ValueError:
                     pass # if there was a script line before that used $args, it may already be removed
-                # Once we've matched the subcommand, enforce leftover-argument checks inside it
-                self.check_args(child.children, remaining_args, True)
+                try:
+                    # Once we've matched the subcommand, enforce leftover-argument checks inside it
+                    self.check_args(child.children, remaining_args, True)
+                    subcommand_executed = True
+                except SystemExit as e:
+                    if e.code != 0:
+                        raise
+                    subcommand_executed = True
                 remaining_args = []
             elif child.name in flags:
                 remaining_args.remove(child.name)
