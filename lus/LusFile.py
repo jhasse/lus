@@ -114,7 +114,6 @@ class Environment:
         self.variables = variables
         assert "args" in variables
 
-
     def get(self, key: str, fallback: str = None) -> str:
         if key in self.variables:
             if key == "args":
@@ -122,14 +121,16 @@ class Environment:
             return self.variables[key]
         return os.environ.get(key, fallback)
 
+
 class LusFile:
-    def __init__(self, content: str):
+    def __init__(self, content: str, invocation_directory: str = None):
         _ensure_kdl_supports_bare_identifiers()
         self.main_lus_kdl = _normalize_nodes(kdl.parse(content).nodes)
         self.print_commands = True
         self.local_variables = {}
         self._piped = not sys.stdout.isatty()
         self._old_working_directory = os.getcwd()
+        self._invocation_directory = invocation_directory or os.getcwd()
 
         if self.main_lus_kdl:
             self.check_args(self.main_lus_kdl, sys.argv[1:], True)
@@ -313,11 +314,15 @@ class LusFile:
         remaining_args = [str(x) for x in args]
 
         subcommand = (
-            remaining_args_without_flags[0]
-            if remaining_args_without_flags
-            else ""
+            remaining_args_without_flags[0] if remaining_args_without_flags else ""
         )
-        environment = Environment({"args": " ".join(remaining_args), "subcommand": subcommand})
+        environment = Environment(
+            {
+                "args": " ".join(remaining_args),
+                "subcommand": subcommand,
+                "invocation_directory": self._invocation_directory,
+            }
+        )
         subcommand_executed = False
 
         subcommand_exists = any(

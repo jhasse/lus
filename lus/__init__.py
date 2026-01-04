@@ -6,8 +6,10 @@ from kdl.errors import ParseError
 
 from .LusFile import LusFile
 
+
 def main():
     try:
+        invocation_directory = os.getcwd()
         MAX_DEPTH = 50
         current_filesystem = os.stat(".").st_dev
         for i in range(MAX_DEPTH):
@@ -24,7 +26,7 @@ def main():
             else:
                 break
 
-        file = LusFile(content)
+        file = LusFile(content, invocation_directory)
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
     except FileNotFoundError as e:

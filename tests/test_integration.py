@@ -105,7 +105,10 @@ def test_exit():
 
     result = lus("subcommand")
     assert result.stderr == ""
-    assert result.stdout == "Inside subcommand\nAfter subcommand, should be printed because exit of previous line was 0\n"
+    assert (
+        result.stdout
+        == "Inside subcommand\nAfter subcommand, should be printed because exit of previous line was 0\n"
+    )
     assert result.returncode == 0
 
     result = lus("subcommand-fail")
@@ -154,3 +157,19 @@ def test_error():
     assert result.stderr == "\x1b[1;31merror:\x1b[0m Duplicate node name 'a'\n"
     assert result.stdout == ""
     assert result.returncode == 1
+
+
+def test_invocation_directory():
+    test_dir = os.path.join(os.path.dirname(__file__), "invocation-directory")
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(os.path.join(test_dir, "empty-folder"))
+        result = lus("show-invocation")
+        assert result.stderr == ""
+        assert (
+            result.stdout
+            == f"Invocation directory: {test_dir}/empty-folder\nempty-folder\nlus.kdl\n"
+        )
+        assert result.returncode == 0
+    finally:
+        os.chdir(original_cwd)

@@ -34,10 +34,11 @@ test {
 
 ## Special environment variables
 
-| Variable                   | Description                       |
-|----------------------------|-----------------------------------|
-| `$subcommand`              | Current subcommand being executed |
-| `$invocation_directory`    | Directory where `lus` was invoked |
+| Variable                   | Description                        |
+|----------------------------|------------------------------------|
+| `$args`                    | Additional arguments passed to lus |
+| `$subcommand`              | Current subcommand being executed  |
+| `$invocation_directory`    | Directory where `lus` was invoked  |
 
 # Development
 

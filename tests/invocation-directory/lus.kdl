@@ -1,0 +1,6 @@
+- set +x
+
+show-invocation {
+    - echo "Invocation directory: $invocation_directory"
+    - ls // cwd is next to lus.kdl, not in $invocation_directory
+}
