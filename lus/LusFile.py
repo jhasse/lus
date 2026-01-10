@@ -369,6 +369,7 @@ class LusFile:
                 "args": " ".join(remaining_args),
                 "subcommand": subcommand,
                 "invocation_directory": self._invocation_directory,
+                "flags": " ".join(flags),
             }
         )
         subcommand_executed = False
@@ -391,10 +392,37 @@ class LusFile:
         comments = self._subcommand_comments
         aliases = self._aliases
 
+        # Build a mapping of subcommand names to their flag children
+        subcommand_flags: Dict[str, List[str]] = {}
+        for child in nodes:
+            if (
+                child.name
+                and child.name not in ("$", "-")
+                and not child.name.startswith("-")
+            ):
+                child_flags = [
+                    c.name for c in child.children if c.name.startswith("--")
+                ]
+                subcommand_flags[child.name] = child_flags
+
         if "-l" in flags:
             print("Available subcommands:")
-            max_len = max((len(name) for name in available_subcommands), default=0)
+            # Compute display length including flags for proper alignment
+            display_parts: List[Tuple[str, str]] = []  # (name, flags_str)
             for name in available_subcommands:
+                flags_list = subcommand_flags.get(name, [])
+                flags_str = " ".join(f"[{f}]" for f in flags_list)
+                display_parts.append((name, flags_str))
+
+            max_len = max(
+                (
+                    len(name) + (1 + len(flags_str) if flags_str else 0)
+                    for name, flags_str in display_parts
+                ),
+                default=0,
+            )
+
+            for name, flags_str in display_parts:
                 suffix_text = ""
                 alias_target = aliases.get(name)
                 comment = comments.get(name)
@@ -403,13 +431,15 @@ class LusFile:
                 elif comment:
                     suffix_text = f"# {comment}"
 
+                name_with_flags = name + (" " + flags_str if flags_str else "")
                 if suffix_text:
-                    padding = " " * (max_len - len(name) + 1)
+                    padding = " " * (max_len - len(name_with_flags) + 1)
                     suffix = f"{padding}{suffix_text}"
                 else:
                     suffix = ""
 
-                print(f"    \x1b[1;34m{name}\x1b[0m{suffix}")
+                flags_part = " " + flags_str if flags_str else ""
+                print(f"    \x1b[1;34m{name}\x1b[0m{flags_part}{suffix}")
             return
 
         child_names = set()

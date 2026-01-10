@@ -38,6 +38,7 @@ test {
 |----------------------------|------------------------------------|
 | `$args`                    | Additional arguments passed to lus |
 | `$subcommand`              | Current subcommand being executed  |
+| `$flags`                   | Arguments starting with `--`       |
 | `$invocation_directory`    | Directory where `lus` was invoked  |
 
 # Development

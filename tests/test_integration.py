@@ -122,6 +122,35 @@ def test_exit():
     assert result.returncode == 42
 
 
+def test_flags():
+    os.chdir(os.path.join(os.path.dirname(__file__), "flags"))
+
+    result = lus("two-flags")
+    assert result.stderr == ""
+    assert result.stdout == "Flags: \nArgs: \n"
+    assert result.returncode == 0
+
+    result = lus("two-flags", "--foo")
+    assert result.stderr == ""
+    assert result.stdout == "Foo flag activated\nFlags: --foo\nArgs: --foo\n"
+    assert result.returncode == 0
+
+    result = lus("two-flags", "--bar", "some_arg")
+    assert result.stderr == ""
+    assert result.stdout == "Bar flag activated\nFlags: --bar\nArgs: --bar some_arg\n"
+    assert result.returncode == 0
+
+    result = lus("-l")
+    assert result.stderr == ""
+    assert (
+        result.stdout
+        == """Available subcommands:
+    \x1b[1;34mtwo-flags\x1b[0m [--foo] [--bar] # demonstrates two flags
+"""
+    )
+    assert result.returncode == 0
+
+
 def test_just_example():
     os.chdir(os.path.join(os.path.dirname(__file__), "just-example"))
     result = lus("non_existing")
@@ -136,7 +165,6 @@ def test_just_example():
 """
     )
     assert result.returncode == 1
-
 
     result = lus("-l")
     assert result.stderr == ""

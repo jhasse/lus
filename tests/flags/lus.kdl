@@ -1,0 +1,12 @@
+- set +x
+// demonstrates two flags
+two-flags {
+    --foo {
+        - echo "Foo flag activated"
+    }
+    --bar {
+        - echo "Bar flag activated"
+    }
+    - echo "Flags: $flags"
+    - echo "Args: $args"
+}
