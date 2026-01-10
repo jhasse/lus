@@ -125,15 +125,63 @@ class Environment:
 class LusFile:
     def __init__(self, content: str, invocation_directory: str = None):
         _ensure_kdl_supports_bare_identifiers()
+        self._raw_content = content
         self.main_lus_kdl = _normalize_nodes(kdl.parse(content).nodes)
         self.print_commands = True
         self.local_variables = {}
         self._piped = not sys.stdout.isatty()
         self._old_working_directory = os.getcwd()
         self._invocation_directory = invocation_directory or os.getcwd()
+        self._subcommand_comments = self._extract_top_level_comments(content)
+        self._aliases = self._compute_aliases(self.main_lus_kdl)
 
         if self.main_lus_kdl:
             self.check_args(self.main_lus_kdl, sys.argv[1:], True)
+
+    def _extract_top_level_comments(self, content: str) -> Dict[str, str]:
+        comments = {}
+        pending: List[str] = []
+        depth = 0
+
+        for line in content.splitlines():
+            stripped = line.strip()
+
+            if stripped.startswith("//"):
+                if depth == 0:
+                    pending.append(stripped[2:].strip())
+                continue
+
+            if depth == 0 and stripped and not stripped.startswith(("{", "}")):
+                # Grab the token up to whitespace or '{'
+                token = re.split(r"\s|{", stripped, maxsplit=1)[0]
+                if token and pending:
+                    comments[token] = " ".join(pending)
+                pending = []
+
+            depth += line.count("{") - line.count("}")
+
+            # Only keep pending comments for top-level declarations
+            if depth != 0:
+                pending = []
+
+        return comments
+
+    def _compute_aliases(self, nodes: List[NormalizedNode]) -> Dict[str, str]:
+        aliases: Dict[str, str] = {}
+        for node in nodes:
+            if node.name in ("", "$", "-"):
+                continue
+            if len(node.children) != 1:
+                continue
+            child = node.children[0]
+            if child.name not in ("$", "-"):
+                continue
+            if child.properties or node.properties:
+                continue
+            args = child.args
+            if len(args) >= 2 and args[0] == "lus" and isinstance(args[1], str):
+                aliases[node.name] = args[1]
+        return aliases
 
     def print_command(self, args: List[str]):
         if self.print_commands:
@@ -331,6 +379,39 @@ class LusFile:
             if len(child.name) > 0 and child.name not in ("$", "-")
         )
 
+        available_subcommands = [
+            child.name
+            for child in nodes
+            if len(child.name) > 0
+            and child.name not in ("$", "-")
+            and child.name[0] != "-"
+            and child.name != ""
+        ]
+
+        comments = self._subcommand_comments
+        aliases = self._aliases
+
+        if "-l" in flags:
+            print("Available subcommands:")
+            max_len = max((len(name) for name in available_subcommands), default=0)
+            for name in available_subcommands:
+                suffix_text = ""
+                alias_target = aliases.get(name)
+                comment = comments.get(name)
+                if alias_target:
+                    suffix_text = f"# alias for `{alias_target}`"
+                elif comment:
+                    suffix_text = f"# {comment}"
+
+                if suffix_text:
+                    padding = " " * (max_len - len(name) + 1)
+                    suffix = f"{padding}{suffix_text}"
+                else:
+                    suffix = ""
+
+                print(f"    \x1b[1;34m{name}\x1b[0m{suffix}")
+            return
+
         child_names = set()
         for i, child in enumerate(nodes):
             if child.name == "$" or child.name == "-":
@@ -378,14 +459,6 @@ class LusFile:
         # If $args was used in this block, treat the arguments as consumed even if they remain
         # in the local list so subsequent commands can reuse them.
         if check_if_args_handled and len(remaining_args) > 0 and not environment.args_used:
-            available_subcommands = [
-                child.name
-                for child in nodes
-                if len(child.name) > 0
-                and child.name != "$"
-                and child.name[0] != "-"
-                and child.name != ""
-            ]
             if len(available_subcommands) == 0:
                 print(
                     f"\x1b[1;31merror:\x1b[0m Unexpected argument: {shlex.join(remaining_args)}"

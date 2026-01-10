@@ -138,6 +138,20 @@ def test_just_example():
     assert result.returncode == 1
 
 
+    result = lus("-l")
+    assert result.stderr == ""
+    assert (
+        result.stdout
+        == """Available subcommands:
+    \x1b[1;34mb\x1b[0m        # alias for `build`
+    \x1b[1;34mbuild\x1b[0m    # build main
+    \x1b[1;34mtest-all\x1b[0m # test everything
+    \x1b[1;34mtest\x1b[0m     # run a specific test
+"""
+    )
+    assert result.returncode == 0
+
+
 def test_print_commands():
     os.chdir(os.path.join(os.path.dirname(__file__), "print-commands"))
     result = lus("verbose")
