@@ -72,6 +72,11 @@ SyntaxError: unterminated string literal (detected at line 1)
     assert result.stdout == "1\n"
     assert result.returncode == 0
 
+    result = lus("multiple", "['arg1',", "'arg2']")
+    assert result.stderr == ""
+    assert result.stdout == "arg1 arg2\n3\n"
+    assert result.returncode == 0
+
 
 def test_subcommand_env_var():
     os.chdir(os.path.join(os.path.dirname(__file__), "subcommand-env-var"))

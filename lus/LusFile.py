@@ -348,8 +348,6 @@ class LusFile:
                                 cmd.extend(remaining_args)
                             continue
                         cmd.append(expandvars.expand(str(arg), environ=environment, nounset=True))
-                    if environment.args_used and not subcommand_exists:
-                        remaining_args = []
                     if subcommand_executed and len(cmd) > 1 and cmd[0] == "lus" and cmd[1] == subcommand:
                         continue
                     self.run(cmd, child.properties)
@@ -377,7 +375,9 @@ class LusFile:
             elif child.name in flags:
                 remaining_args.remove(child.name)
                 self.check_args(child.children, remaining_args_without_flags, False)
-        if check_if_args_handled and len(remaining_args) > 0:
+        # If $args was used in this block, treat the arguments as consumed even if they remain
+        # in the local list so subsequent commands can reuse them.
+        if check_if_args_handled and len(remaining_args) > 0 and not environment.args_used:
             available_subcommands = [
                 child.name
                 for child in nodes
