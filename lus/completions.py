@@ -61,7 +61,7 @@ _lus_find_kdl() {
     return 1
 }
 
-_lus "$@"
+compdef _lus lus
 """
 
 FISH_COMPLETION = """

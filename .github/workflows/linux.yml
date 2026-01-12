@@ -62,9 +62,24 @@ jobs:
           pip install -e .
       - name: Install shells
         run: sudo apt-get update && sudo apt-get install -y bash zsh fish
-      - name: Test bash completion syntax
-        run: bash -n <(lus --completions bash)
-      - name: Test zsh completion syntax
-        run: zsh -n <(lus --completions zsh)
-      - name: Test fish completion syntax
-        run: fish -n <(lus --completions fish)
+      - name: Test bash completion produces no output
+        run: |
+          output=$(bash -c 'eval "$(lus --completions bash)"' 2>&1)
+          if [ -n "$output" ]; then
+            echo "Unexpected output: $output"
+            exit 1
+          fi
+      - name: Test zsh completion produces no output
+        run: |
+          output=$(zsh -c 'autoload -Uz compinit && compinit; source <(lus --completions zsh)' 2>&1)
+          if [ -n "$output" ]; then
+            echo "Unexpected output: $output"
+            exit 1
+          fi
+      - name: Test fish completion produces no output
+        run: |
+          output=$(fish -c 'lus --completions fish | source' 2>&1)
+          if [ -n "$output" ]; then
+            echo "Unexpected output: $output"
+            exit 1
+          fi

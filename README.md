@@ -51,8 +51,8 @@ eval "$(lus --completions bash)"
 ```
 
 **Zsh** (`~/.zshrc`):
-```bash
-eval "$(lus --completions zsh)"
+```zsh
+autoload -Uz compinit && compinit; source <(lus --completions zsh)
 ```
 
 **Fish** (`~/.config/fish/config.fish`):
