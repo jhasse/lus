@@ -41,6 +41,30 @@ test {
 | `$flags`                   | Arguments starting with `--`       |
 | `$invocation_directory`    | Directory where `lus` was invoked  |
 
+## Shell Completions
+
+`lus` supports tab completion for bash, zsh, fish, and PowerShell. Add one of the following to your shell configuration:
+
+**Bash** (`~/.bashrc`):
+```bash
+eval "$(lus --completions bash)"
+```
+
+**Zsh** (`~/.zshrc`):
+```bash
+eval "$(lus --completions zsh)"
+```
+
+**Fish** (`~/.config/fish/config.fish`):
+```fish
+lus --completions fish | source
+```
+
+**PowerShell** (`$PROFILE`):
+```powershell
+Invoke-Expression (& lus --completions powershell)
+```
+
 # Development
 
 Run unit and integration tests:

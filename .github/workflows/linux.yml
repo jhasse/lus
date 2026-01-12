@@ -46,3 +46,25 @@ jobs:
         run: |
           pip install -r requirements.txt
           pytest
+  completions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Install shells
+        run: sudo apt-get update && sudo apt-get install -y bash zsh fish
+      - name: Test bash completion syntax
+        run: bash -n <(lus --completions bash)
+      - name: Test zsh completion syntax
+        run: zsh -n <(lus --completions zsh)
+      - name: Test fish completion syntax
+        run: fish -n <(lus --completions fish)

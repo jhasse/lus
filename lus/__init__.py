@@ -5,9 +5,24 @@ import os
 from kdl.errors import ParseError
 
 from .LusFile import LusFile
+from .completions import get_completion_script
 
 
 def main():
+    # Handle --completions flag before looking for lus.kdl
+    if len(sys.argv) >= 2 and sys.argv[1] == "--completions":
+        if len(sys.argv) < 3:
+            print("Usage: lus --completions <shell>", file=sys.stderr)
+            print("Supported shells: bash, zsh, fish, powershell", file=sys.stderr)
+            sys.exit(1)
+        shell = sys.argv[2]
+        try:
+            print(get_completion_script(shell))
+        except ValueError as e:
+            print(f"error: {e}", file=sys.stderr)
+            sys.exit(1)
+        return
+
     try:
         invocation_directory = os.getcwd()
         MAX_DEPTH = 50
