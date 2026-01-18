@@ -61,7 +61,7 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
       - name: Install shells
-        run: sudo apt-get update && sudo apt-get install -y bash zsh fish
+        run: sudo apt-get update && sudo apt-get install -y bash zsh fish util-linux
       - name: Test bash completion produces no output
         run: |
           output=$(bash -c 'eval "$(lus --completions bash)"' 2>&1)
@@ -71,7 +71,7 @@ jobs:
           fi
       - name: Test zsh completion produces no output
         run: |
-          python3 -c "import subprocess; import sys; output = subprocess.run(['env', 'ZSH_DISABLE_COMPFIX=1', 'zsh', '-fic', 'autoload -Uz compinit && compinit; source <(lus --completions zsh)'], capture_output=True, text=True); sys.stdout.write(output.stdout); sys.stderr.write(output.stderr); sys.exit(1) if output.stdout.strip() or output.stderr.strip() else sys.exit(0)"
+          python3 -c "import subprocess, sys; output = subprocess.run(['script', '-q', '-c', 'zsh -ic \"autoload -Uz compinit && compinit; source <(lus --completions zsh)\"', '/dev/null'], capture_output=True, text=True); sys.stdout.write(output.stdout); sys.stderr.write(output.stderr); sys.exit(1) if output.stdout.strip() or output.stderr.strip() else sys.exit(0)"
       - name: Test fish completion produces no output
         run: |
           output=$(fish -c 'lus --completions fish | source' 2>&1)
