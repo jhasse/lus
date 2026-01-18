@@ -71,7 +71,7 @@ jobs:
           fi
       - name: Test zsh completion produces no output
         run: |
-          python3 -c "import subprocess; import sys; output = subprocess.run(['zsh', '-c', 'autoload -Uz compinit && compinit; source <(lus --completions zsh)'], capture_output=True, text=True); sys.stdout.write(output.stdout); sys.stderr.write(output.stderr); sys.exit(1) if output.stdout.strip() or output.stderr.strip() else sys.exit(0)"
+          python3 -c "import subprocess; import sys; output = subprocess.run(['zsh', '-i', '-c', 'autoload -Uz compinit && compinit; source <(lus --completions zsh)'], capture_output=True, text=True); sys.stdout.write(output.stdout); sys.stderr.write(output.stderr); sys.exit(1) if output.stdout.strip() or output.stderr.strip() else sys.exit(0)"
       - name: Test fish completion produces no output
         run: |
           output=$(fish -c 'lus --completions fish | source' 2>&1)
