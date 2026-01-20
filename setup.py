@@ -1,19 +1,22 @@
 from pathlib import Path
+import setuptools
+import toml
 
-from setuptools import setup
-
-VERSION = "0.3.0"  # also see __init__.py
+pyproject = toml.load("pyproject.toml")
+project = pyproject["project"]
 
 README = Path(__file__).parent / "README.md"
 long_description = README.read_text(encoding="utf-8")
 
-setup(
-    name="lus",
-    version=VERSION,
+setuptools.setup(
+    name=project["name"],
+    version=project["version"],
     author="Jan Niklas Hasse",
     author_email="jhasse@bixense.com",
     url="https://github.com/jhasse/lus",
-    download_url="https://github.com/jhasse/lus/archive/v{}.tar.gz".format(VERSION),
+    download_url="https://github.com/jhasse/lus/archive/v{}.tar.gz".format(
+        project["version"]
+    ),
     description="A simple task-runner using KDL for configuration",
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -1,3 +1,8 @@
+[project]
+name = "lus"
+version = "0.3.0"
+requires-python = ">=3.7"
+
 [tool.pytest.ini_options]
 pythonpath = [
   "."
