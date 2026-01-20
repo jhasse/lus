@@ -145,7 +145,7 @@ def test_flags():
     assert (
         result.stdout
         == """Available subcommands:
-    \x1b[1;34mtwo-flags\x1b[0m [--foo] [--bar] # demonstrates two flags
+    two-flags \x1b[34m[--foo]\x1b[0m \x1b[34m[--bar]\x1b[0m \x1b[32m# demonstrates two flags\x1b[0m
 """
     )
     assert result.returncode == 0
@@ -171,10 +171,10 @@ def test_just_example():
     assert (
         result.stdout
         == """Available subcommands:
-    \x1b[1;34mb\x1b[0m        # alias for `build`
-    \x1b[1;34mbuild\x1b[0m    # build main
-    \x1b[1;34mtest-all\x1b[0m # test everything
-    \x1b[1;34mtest\x1b[0m     # run a specific test
+    b        \x1b[32m# alias for `build`\x1b[0m
+    build    \x1b[32m# build main\x1b[0m
+    test-all \x1b[32m# test everything\x1b[0m
+    test     \x1b[32m# run a specific test\x1b[0m
 """
     )
     assert result.returncode == 0

@@ -123,6 +123,11 @@ class Environment:
 
 
 class LusFile:
+    @staticmethod
+    def _strip_ansi(text: str) -> str:
+        # Remove ANSI escape codes for visible width calculation
+        return re.sub(r"\x1b\[[0-9;]*m", "", text)
+
     def __init__(self, content: str, invocation_directory: str = None):
         _ensure_kdl_supports_bare_identifiers()
         self._raw_content = content
@@ -417,14 +422,19 @@ class LusFile:
             display_parts: List[Tuple[str, str]] = []  # (name, flags_str)
             for name in available_subcommands:
                 flags_list = subcommand_flags.get(name, [])
-                flags_str = " ".join(f"[{f}]" for f in flags_list)
+                if flags_list:
+                    flags_str = " ".join(f"\x1b[34m[{f}]\x1b[0m" for f in flags_list)
+                else:
+                    flags_str = ""
                 display_parts.append((name, flags_str))
 
+            def visible_len(name, flags_str):
+                # Calculate visible length (without ANSI codes)
+                name_flags = name + (" " + flags_str if flags_str else "")
+                return len(self._strip_ansi(name_flags))
+
             max_len = max(
-                (
-                    len(name) + (1 + len(flags_str) if flags_str else 0)
-                    for name, flags_str in display_parts
-                ),
+                (visible_len(name, flags_str) for name, flags_str in display_parts),
                 default=0,
             )
 
@@ -439,13 +449,14 @@ class LusFile:
 
                 name_with_flags = name + (" " + flags_str if flags_str else "")
                 if suffix_text:
-                    padding = " " * (max_len - len(name_with_flags) + 1)
-                    suffix = f"{padding}{suffix_text}"
+                    visible = self._strip_ansi(name_with_flags)
+                    padding = " " * (max_len - len(visible) + 1)
+                    suffix = f"{padding}\x1b[32m{suffix_text}\x1b[0m"
                 else:
                     suffix = ""
 
                 flags_part = " " + flags_str if flags_str else ""
-                print(f"    \x1b[1;34m{name}\x1b[0m{flags_part}{suffix}")
+                print(f"    {name}{flags_part}{suffix}")
             return
 
         child_names = set()
