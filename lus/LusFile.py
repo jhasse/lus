@@ -174,13 +174,17 @@ class LusFile:
             if len(node.children) != 1:
                 continue
             child = node.children[0]
-            if child.name not in ("$", "-"):
-                continue
             if child.properties or node.properties:
                 continue
-            args = child.args
-            if len(args) >= 2 and args[0] == "lus" and isinstance(args[1], str):
-                aliases[node.name] = args[1]
+            # Handle both "$ lus build" and "lus build" formats
+            if child.name in ("$", "-"):
+                args = child.args
+                if len(args) >= 2 and args[0] == "lus" and isinstance(args[1], str):
+                    aliases[node.name] = args[1]
+            elif child.name == "lus" and len(child.children) == 0:
+                args = child.args
+                if len(args) >= 1 and isinstance(args[0], str):
+                    aliases[node.name] = args[0]
         return aliases
 
     def print_command(self, args: List[str]):
@@ -379,13 +383,16 @@ class LusFile:
         subcommand_exists = any(
             child.name == subcommand
             for child in nodes
-            if len(child.children) > 0
+            if len(child.name) > 0 and child.name not in ("$", "-")
         )
 
         available_subcommands = [
             child.name
             for child in nodes
-            if len(child.children) > 0
+            if len(child.name) > 0
+            and child.name not in ("$", "-")
+            and child.name[0] != "-"
+            and child.name != ""
         ]
 
         comments = self._subcommand_comments
@@ -398,7 +405,6 @@ class LusFile:
                 child.name
                 and child.name not in ("$", "-")
                 and not child.name.startswith("-")
-                and len(child.children) > 0
             ):
                 child_flags = [
                     c.name for c in child.children if c.name.startswith("--")
@@ -444,7 +450,7 @@ class LusFile:
 
         child_names = set()
         for i, child in enumerate(nodes):
-            if child.name == "$" or child.name == "-" or len(child.children) == 0:
+            if child.name == "$" or child.name == "-" or (len(child.children) == 0 and len(child.args) > 0):
                 if len(child.args) > 0:
                     cmd = [] if child.name == "$" or child.name == "-" else [child.name]
                     for arg in child.args:
