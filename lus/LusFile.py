@@ -343,7 +343,9 @@ class LusFile:
                                 self.print_command([brew_path, "install", formula])
                                 subprocess.check_call([brew_path, "install", formula])
             self.print_command(args)
-            subprocess.check_call(args)
+            subprocess.check_call(args,
+                shell=os.name == 'nt' # required to run .bat, .cmd, etc. on Windows
+            )
             return 0, True
 
     def check_args(self, nodes, args: List[str], check_if_args_handled: bool):
@@ -377,16 +379,13 @@ class LusFile:
         subcommand_exists = any(
             child.name == subcommand
             for child in nodes
-            if len(child.name) > 0 and child.name not in ("$", "-")
+            if len(child.children) > 0
         )
 
         available_subcommands = [
             child.name
             for child in nodes
-            if len(child.name) > 0
-            and child.name not in ("$", "-")
-            and child.name[0] != "-"
-            and child.name != ""
+            if len(child.children) > 0
         ]
 
         comments = self._subcommand_comments
@@ -399,6 +398,7 @@ class LusFile:
                 child.name
                 and child.name not in ("$", "-")
                 and not child.name.startswith("-")
+                and len(child.children) > 0
             ):
                 child_flags = [
                     c.name for c in child.children if c.name.startswith("--")
@@ -444,9 +444,9 @@ class LusFile:
 
         child_names = set()
         for i, child in enumerate(nodes):
-            if child.name == "$" or child.name == "-":
+            if child.name == "$" or child.name == "-" or len(child.children) == 0:
                 if len(child.args) > 0:
-                    cmd = []
+                    cmd = [] if child.name == "$" or child.name == "-" else [child.name]
                     for arg in child.args:
                         if arg == "$args":
                             # special case because it won't be passed as one argument with spaces
