@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Tuple
 
 import expandvars
 import kdl
+from termcolor import colored
 
 
 @dataclass
@@ -194,7 +195,7 @@ class LusFile:
 
     def print_command(self, args: List[str]):
         if self.print_commands:
-            self._print(f"\x1b[1m{shlex.join(args)}\x1b[0m")
+            self._print(colored(shlex.join(args), attrs=["bold"]))
 
     def _print(self, message: str):
         if self._piped:
@@ -344,8 +345,8 @@ class LusFile:
                         if formula:
                             # ask [Y/n] if to install it now:
                             response = input(
-                                f"\x1b[1;33mwarning:\x1b[0m Command '{args[0]}' not found. "
-                                f"It is provided by the Homebrew package '\x1b[1;34m{formula}\x1b[0m'. "
+                                f"{colored('warning:', 'yellow', attrs=['bold'])} Command '{args[0]}' not found. "
+                                f"It is provided by the Homebrew package '{colored(formula, 'blue', attrs=['bold'])}'. "
                                 "Do you want to install it now? [Y/n] "
                             )
                             if response.lower() in ["", "y", "yes"]:
@@ -423,7 +424,7 @@ class LusFile:
             for name in available_subcommands:
                 flags_list = subcommand_flags.get(name, [])
                 if flags_list:
-                    flags_str = " ".join(f"\x1b[34m[{f}]\x1b[0m" for f in flags_list)
+                    flags_str = " ".join(colored(f"[{f}]", "blue") for f in flags_list)
                 else:
                     flags_str = ""
                 display_parts.append((name, flags_str))
@@ -451,7 +452,7 @@ class LusFile:
                 if suffix_text:
                     visible = self._strip_ansi(name_with_flags)
                     padding = " " * (max_len - len(visible) + 1)
-                    suffix = f"{padding}\x1b[32m{suffix_text}\x1b[0m"
+                    suffix = f"{padding}{colored(suffix_text, 'green')}"
                 else:
                     suffix = ""
 
@@ -484,7 +485,7 @@ class LusFile:
                 continue
             if len(child.children) > 0:
                 if child.name in child_names:
-                    print(f"\x1b[1;31merror:\x1b[0m Duplicate node name '{child.name}'", file=sys.stderr)
+                    print(f"{colored('error:', 'red', attrs=['bold'])} Duplicate node name '{child.name}'", file=sys.stderr)
                     raise SystemExit(1)
                 child_names.add(child.name)
             if child.name == subcommand:
@@ -506,15 +507,21 @@ class LusFile:
                 self.check_args(child.children, remaining_args_without_flags, False)
         # If $args was used in this block, treat the arguments as consumed even if they remain
         # in the local list so subsequent commands can reuse them.
-        if check_if_args_handled and len(remaining_args) > 0 and not environment.args_used:
+        if (
+            check_if_args_handled
+            and len(remaining_args) > 0
+            and not environment.args_used
+        ):
             if len(available_subcommands) == 0:
                 print(
-                    f"\x1b[1;31merror:\x1b[0m Unexpected argument: {shlex.join(remaining_args)}"
+                    f"{colored('error:', 'red', attrs=['bold'])} Unexpected argument: {shlex.join(remaining_args)}"
                 )
             else:
                 print(
-                    f"\x1b[1;31merror:\x1b[0m Unknown subcommand {shlex.quote(subcommand)} not one of:"
+                    f"{colored('error:', 'red', attrs=['bold'])} Unknown subcommand {shlex.quote(subcommand)} not one of:"
                 )
                 for available_subcommand in available_subcommands:
-                    print(f"    \x1b[1;34m{available_subcommand}\x1b[0m")
+                    print(
+                        f"    {colored(available_subcommand, 'blue', attrs=['bold'])}"
+                    )
             raise SystemExit(1)

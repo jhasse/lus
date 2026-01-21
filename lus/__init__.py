@@ -3,6 +3,7 @@ import sys
 import os
 
 from kdl.errors import ParseError
+from termcolor import colored
 
 from .LusFile import LusFile
 from .completions import get_completion_script
@@ -45,10 +46,10 @@ def main():
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
     except FileNotFoundError as e:
-        print(f"\x1b[1;31merror:\x1b[0m {e.strerror}: {e.filename}", file=sys.stderr)
+        print(f"{colored('error:', 'red', attrs=['bold'])} {e.strerror}: {e.filename}", file=sys.stderr)
         sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(130)
     except ParseError as e:
-        print(f"\x1b[1;31merror:\x1b[0m lus.kdl:{e}", file=sys.stderr)
+        print(f"{colored('error:', 'red', attrs=['bold'])} lus.kdl:{e}", file=sys.stderr)
         sys.exit(1)
