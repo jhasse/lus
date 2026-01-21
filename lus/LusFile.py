@@ -332,6 +332,55 @@ class LusFile:
             else:
                 raise NotImplementedError(f"set {args[1]} not implemented")
             return 0, True
+        elif args[0] == "call":
+            # Windows-only command for running .bat/.cmd scripts with environment variable support
+            if os.name != "nt":
+                # Silently ignore on non-Windows platforms
+                return 0, True
+
+            if len(args) < 2:
+                raise ValueError("'call' requires a script file")
+
+            script = args[1]
+
+            # Support relative paths with / (e.g., scripts/build.bat)
+            if "/" in script and not os.path.isabs(script):
+                script = os.path.join(os.getcwd(), script)
+
+            if not os.path.isfile(script):
+                raise FileNotFoundError(f"Script not found: {script}")
+
+            if not script.lower().endswith((".bat", ".cmd")):
+                raise ValueError(
+                    f"'call' only supports .bat or .cmd files, got: {script}"
+                )
+
+            self.print_command(args)
+
+            # Run the batch file and capture environment changes
+            # We do this by running the script and then dumping the environment with 'set'
+            cmd_args = [script] + args[2:]
+            cmd_string = " ".join(f'"{arg}"' if " " in arg else arg for arg in cmd_args)
+
+            full_cmd = f'cmd.exe /c "{cmd_string} && set"'
+
+            result = subprocess.run(
+                full_cmd, shell=True, capture_output=True, text=True, check=True
+            )
+
+            # The output contains the environment in KEY=VALUE format
+            new_env = {}
+            for line in result.stdout.splitlines():
+                if "=" in line:
+                    # Split only on the first '=' to handle values containing '='
+                    key, _, value = line.partition("=")
+                    new_env[key] = value
+
+            for key, value in new_env.items():
+                if key not in os.environ or os.environ[key] != value:
+                    os.environ[key] = value
+
+            return 0, True
         elif "/" in args[0] and not os.path.isabs(args[0]):
             self.print_command(args)
             subprocess.check_call([os.path.join(os.getcwd(), args[0])] + args[1:])
