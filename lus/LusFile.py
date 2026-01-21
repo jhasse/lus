@@ -129,7 +129,9 @@ class LusFile:
         # Remove ANSI escape codes for visible width calculation
         return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
-    def __init__(self, content: str, invocation_directory: str = None):
+    def __init__(
+        self, content: str, invocation_directory: str = None, args: List[str] = None
+    ):
         _ensure_kdl_supports_bare_identifiers()
         self._raw_content = content
         self.main_lus_kdl = _normalize_nodes(kdl.parse(content).nodes)
@@ -142,7 +144,9 @@ class LusFile:
         self._aliases = self._compute_aliases(self.main_lus_kdl)
 
         if self.main_lus_kdl:
-            self.check_args(self.main_lus_kdl, sys.argv[1:], True)
+            self.check_args(
+                self.main_lus_kdl, args if args is not None else sys.argv[1:], True
+            )
 
     def _extract_top_level_comments(self, content: str) -> Dict[str, str]:
         comments = {}

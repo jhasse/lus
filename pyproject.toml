@@ -6,7 +6,7 @@ description = "A simple task-runner using KDL for configuration"
 authors = [
     { name = "Jan Niklas Hasse", email = "jhasse@bixense.com" }
 ]
-dependencies = ['kdl-py', 'expandvars', 'termcolor']
+dependencies = ['kdl-py', 'expandvars', 'termcolor', 'click']
 readme = "README.md"
 scripts = { lus = "lus:main" }
 
