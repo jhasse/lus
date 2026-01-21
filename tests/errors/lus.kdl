@@ -1,3 +1,6 @@
+// should not error on two "export":
+export FOO=bar
+export BAR=foo
 a {
     $ echo asdf
 }

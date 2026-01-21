@@ -482,10 +482,11 @@ class LusFile:
                 else:
                     self.local_variables.update(child.properties)
                 continue
-            if child.name in child_names:
-                print(f"\x1b[1;31merror:\x1b[0m Duplicate node name '{child.name}'", file=sys.stderr)
-                raise SystemExit(1)
-            child_names.add(child.name)
+            if len(child.children) > 0:
+                if child.name in child_names:
+                    print(f"\x1b[1;31merror:\x1b[0m Duplicate node name '{child.name}'", file=sys.stderr)
+                    raise SystemExit(1)
+                child_names.add(child.name)
             if child.name == subcommand:
                 try:
                     remaining_args.remove(subcommand)
