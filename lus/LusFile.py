@@ -381,6 +381,47 @@ class LusFile:
                     os.environ[key] = value
 
             return 0, True
+        elif args[0] == "source" or args[0] == ".":
+            # Unix-only command for sourcing shell scripts with environment variable support
+            if os.name == "nt":
+                # Silently ignore on Windows platforms
+                return 0, True
+
+            if len(args) < 2:
+                raise ValueError("'source' requires a script file")
+
+            script = args[1]
+
+            # Support relative paths
+            if not os.path.isabs(script):
+                script = os.path.join(os.getcwd(), script)
+
+            if not os.path.isfile(script):
+                raise FileNotFoundError(f"Script not found: {script}")
+
+            self.print_command(args)
+
+            # Source the script and capture environment changes
+            # We use env -0 to NUL-separate entries so values with newlines are handled
+            script_args = " ".join(shlex.quote(a) for a in args[2:])
+            shell = os.environ.get("SHELL", "/bin/sh")
+            full_cmd = f". {shlex.quote(script)} {script_args} && env -0"
+
+            result = subprocess.run(
+                [shell, "-c", full_cmd],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            # Parse NUL-separated KEY=VALUE pairs
+            for entry in result.stdout.split("\0"):
+                if "=" in entry:
+                    key, _, value = entry.partition("=")
+                    if key not in os.environ or os.environ[key] != value:
+                        os.environ[key] = value
+
+            return 0, True
         elif "/" in args[0] and not os.path.isabs(args[0]):
             self.print_command(args)
             subprocess.check_call([os.path.join(os.getcwd(), args[0])] + args[1:])

@@ -2,6 +2,7 @@ import os
 import pytest
 from lus import LusFile
 
+
 def test_run_cd(tmp_path):
     lusfile = LusFile("")
     with pytest.raises(FileNotFoundError):
@@ -157,5 +158,121 @@ def test_run_call_ignored_on_non_windows(tmp_path):
 
         # Should return successfully without executing
         lusfile.run(["call", "scripts/test.bat"], {})
+    finally:
+        os.chdir(cwd)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="source command is Unix-only")
+def test_run_source_shell_script(tmp_path):
+    """Test that source command executes shell scripts."""
+    lusfile = LusFile("")
+    cwd = os.getcwd()
+
+    try:
+        os.chdir(tmp_path)
+        scripts_dir = tmp_path / "scripts"
+        scripts_dir.mkdir()
+        script = scripts_dir / "setup.sh"
+        script.write_text("export LUS_TEST_SOURCE=hello\n")
+
+        if "LUS_TEST_SOURCE" in os.environ:
+            del os.environ["LUS_TEST_SOURCE"]
+
+        lusfile.run(["source", "scripts/setup.sh"], {})
+
+        assert os.environ.get("LUS_TEST_SOURCE") == "hello"
+
+        del os.environ["LUS_TEST_SOURCE"]
+    finally:
+        os.chdir(cwd)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="source command is Unix-only")
+def test_run_source_dot_syntax(tmp_path):
+    """Test that . (dot) syntax works as an alias for source."""
+    lusfile = LusFile("")
+    cwd = os.getcwd()
+
+    try:
+        os.chdir(tmp_path)
+        script = tmp_path / "env.sh"
+        script.write_text("export LUS_DOT_TEST=works\n")
+
+        if "LUS_DOT_TEST" in os.environ:
+            del os.environ["LUS_DOT_TEST"]
+
+        lusfile.run([".", str(script)], {})
+
+        assert os.environ.get("LUS_DOT_TEST") == "works"
+
+        del os.environ["LUS_DOT_TEST"]
+    finally:
+        os.chdir(cwd)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="source command is Unix-only")
+def test_run_source_missing_file(tmp_path):
+    """Test that source command raises FileNotFoundError for missing files."""
+    lusfile = LusFile("")
+    cwd = os.getcwd()
+
+    try:
+        os.chdir(tmp_path)
+        with pytest.raises(FileNotFoundError):
+            lusfile.run(["source", "nonexistent.sh"], {})
+    finally:
+        os.chdir(cwd)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="source command is Unix-only")
+def test_run_source_no_arguments():
+    """Test that source command requires a script argument."""
+    lusfile = LusFile("")
+
+    with pytest.raises(ValueError, match="requires a script file"):
+        lusfile.run(["source"], {})
+
+
+@pytest.mark.skipif(os.name == "nt", reason="source command is Unix-only")
+def test_run_source_environment_variables(tmp_path):
+    """Test that source command captures and persists environment variable changes."""
+    lusfile = LusFile("")
+    cwd = os.getcwd()
+
+    try:
+        os.chdir(tmp_path)
+        script = tmp_path / "setenv.sh"
+        script.write_text(
+            "export MY_SOURCE_VAR=hello_world\nexport ANOTHER_SOURCE_VAR=test123\n"
+        )
+
+        if "MY_SOURCE_VAR" in os.environ:
+            del os.environ["MY_SOURCE_VAR"]
+        if "ANOTHER_SOURCE_VAR" in os.environ:
+            del os.environ["ANOTHER_SOURCE_VAR"]
+
+        lusfile.run(["source", str(script)], {})
+
+        assert os.environ.get("MY_SOURCE_VAR") == "hello_world"
+        assert os.environ.get("ANOTHER_SOURCE_VAR") == "test123"
+
+        del os.environ["MY_SOURCE_VAR"]
+        del os.environ["ANOTHER_SOURCE_VAR"]
+    finally:
+        os.chdir(cwd)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="test Windows behavior")
+def test_run_source_ignored_on_windows(tmp_path):
+    """Test that source command is silently ignored on Windows platforms."""
+    lusfile = LusFile("")
+    cwd = os.getcwd()
+
+    try:
+        os.chdir(tmp_path)
+        script = tmp_path / "test.sh"
+        script.write_text("export FOO=bar\n")
+
+        lusfile.run(["source", str(script)], {})
     finally:
         os.chdir(cwd)
