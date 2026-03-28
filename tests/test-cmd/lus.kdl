@@ -1,0 +1,7 @@
+set +x
+foo {
+    test -n $args || echo "No args passed to foo"
+    test -z $args || echo "Args: $args"
+}
+test -n $args || echo "Args empty"
+test -n $subcommand || lus foo

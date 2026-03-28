@@ -109,6 +109,25 @@ def test_subcommand_env_var():
     assert result.returncode == 0
 
 
+def test_test_cmd():
+    os.chdir(os.path.join(os.path.dirname(__file__), "test-cmd"))
+
+    result = lus("foo", "arg1", "arg2")
+    assert result.stderr == ""
+    assert result.stdout == "Args: arg1 arg2\n"
+    assert result.returncode == 0
+
+    result = lus("foo")
+    assert result.stderr == ""
+    assert result.stdout == "No args passed to foo\n"
+    assert result.returncode == 0
+
+    result = lus()
+    assert result.stderr == ""
+    assert result.stdout == "Args empty\nNo args passed to foo\n"
+    assert result.returncode == 0
+
+
 def test_exit():
     os.chdir(os.path.join(os.path.dirname(__file__), "exit"))
 

@@ -111,9 +111,10 @@ def _ensure_kdl_supports_bare_identifiers():
 
 
 class Environment:
-    def __init__(self, variables: Dict[str, str]):
+    def __init__(self, variables: Dict[str, str], args_list: List[str] = None):
         self.args_used = False
         self.variables = variables
+        self.args_list = args_list or []
         assert "args" in variables
 
     def get(self, key: str, fallback: str = None) -> str:
@@ -122,6 +123,11 @@ class Environment:
                 self.args_used = True
             return self.variables[key]
         return os.environ.get(key, fallback)
+
+    def clear_args(self):
+        """Clear args after they've been consumed by a subcommand."""
+        self.args_list = []
+        self.variables["args"] = ""
 
 
 class LusFile:
@@ -512,7 +518,8 @@ class LusFile:
                 "subcommand": subcommand,
                 "invocation_directory": self._invocation_directory,
                 "flags": " ".join(flags),
-            }
+            },
+            args_list=list(remaining_args),  # Make a copy to preserve original args
         )
         subcommand_executed = False
 
@@ -592,22 +599,35 @@ class LusFile:
 
         child_names = set()
         for i, child in enumerate(nodes):
-            if child.name == "$" or child.name == "-" or (len(child.children) == 0 and len(child.args) > 0):
+            if (
+                child.name == "$"
+                or child.name == "-"
+                or (len(child.children) == 0 and len(child.args) > 0)
+            ):
                 if len(child.args) > 0:
                     cmd = [] if child.name == "$" or child.name == "-" else [child.name]
                     for arg in child.args:
                         if arg == "$args":
                             # special case because it won't be passed as one argument with spaces
                             environment.args_used = True
-                            if len(remaining_args) == 0:
+                            if len(environment.args_list) == 0:
                                 # Only keep a placeholder when the target command needs an argument (e.g., test -n $args)
                                 if len(cmd) > 0 and cmd[0] == "test":
                                     cmd.append("")
                             else:
-                                cmd.extend(remaining_args)
+                                cmd.extend(environment.args_list)
                             continue
-                        cmd.append(expandvars.expand(str(arg), environ=environment, nounset=True))
-                    if subcommand_executed and len(cmd) > 1 and cmd[0] == "lus" and cmd[1] == subcommand:
+                        cmd.append(
+                            expandvars.expand(
+                                str(arg), environ=environment, nounset=True
+                            )
+                        )
+                    if (
+                        subcommand_executed
+                        and len(cmd) > 1
+                        and cmd[0] == "lus"
+                        and cmd[1] == subcommand
+                    ):
                         continue
                     self.run(cmd, child.properties)
                 else:
@@ -627,11 +647,12 @@ class LusFile:
                     # Once we've matched the subcommand, enforce leftover-argument checks inside it
                     self.check_args(child.children, remaining_args, True)
                     subcommand_executed = True
+                    environment.args_used = True
                 except SystemExit as e:
                     if e.code != 0:
                         raise
                     subcommand_executed = True
-                remaining_args = []
+                    environment.args_used = True
             elif child.name in flags:
                 remaining_args.remove(child.name)
                 self.check_args(child.children, remaining_args_without_flags, False)
