@@ -82,6 +82,15 @@ SyntaxError: unterminated string literal (detected at line 1)
     assert result.returncode == 0
 
 
+def test_built_in_shell():
+    os.chdir(os.path.join(os.path.dirname(__file__), "built-in-shell"))
+
+    result = lus("and", force_color=False)
+    assert result.stderr == ""
+    assert result.stdout == "echo a && echo b\na\nb\n"
+    assert result.returncode == 0
+
+
 def test_subcommand_env_var():
     os.chdir(os.path.join(os.path.dirname(__file__), "subcommand-env-var"))
 

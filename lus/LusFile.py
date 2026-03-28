@@ -208,21 +208,46 @@ class LusFile:
         if self.print_commands:
             self._print(colored(shlex.join(args), attrs=["bold"]))
 
+    def _format_chained_command(self, args: List[str]) -> str:
+        """Format a chained command for printing, handling && and || operators."""
+        result = []
+        i = 0
+        current_segment = []
+
+        while i < len(args):
+            if args[i] in ("&&", "||"):
+                if current_segment:
+                    result.append(shlex.join(current_segment))
+                    current_segment = []
+                result.append(args[i])
+            else:
+                current_segment.append(args[i])
+            i += 1
+
+        if current_segment:
+            result.append(shlex.join(current_segment))
+
+        return " ".join(result)
+
     def _print(self, message: str):
         if self._piped:
             # strip ANSI escape codes
-            ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-            message = ansi_escape.sub('', message)
+            ansi_escape = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+            message = ansi_escape.sub("", message)
         print(message, flush=True)
 
     def run(self, args: List[str], properties: Dict[str, str]):
         if "&&" in args or "||" in args:
             return self._run_chained(args, properties)
-        status, _ = self._run_single(args, properties)
+        status, _ = self._run_single(args, properties, print_command=True)
         if status != 0:
             raise SystemExit(status)
 
     def _run_chained(self, args: List[str], properties: Dict[str, str]):
+        # Print the entire chained command once at the beginning
+        if self.print_commands:
+            self._print(colored(self._format_chained_command(args), attrs=["bold"]))
+
         segments = []
         operators = []
         current = []
@@ -245,7 +270,9 @@ class LusFile:
 
         for i, segment in enumerate(segments):
             try:
-                status, condition = self._run_single(segment, properties)
+                status, condition = self._run_single(
+                    segment, properties, print_command=False
+                )
             except SystemExit as e:
                 status = e.code
                 condition = status == 0
@@ -274,7 +301,7 @@ class LusFile:
             raise SystemExit(last_status)
 
     def _run_single(
-        self, args: List[str], properties: Dict[str, str]
+        self, args: List[str], properties: Dict[str, str], print_command: bool = True
     ) -> Tuple[int, bool]:
         if args[0] == "exit":
             code = args[1] if len(args) > 1 else 0
@@ -284,7 +311,8 @@ class LusFile:
                 pass
             raise SystemExit(code)
         elif args[0] == "cd":
-            self.print_command(args)
+            if print_command:
+                self.print_command(args)
             if len(args) == 2 and args[1] == "-":
                 os.chdir(self._old_working_directory)
                 return 0, True
@@ -328,7 +356,8 @@ class LusFile:
                 os.chdir(old_cwd)
             return 0, True
         elif args[0] == "export":
-            self.print_command(args + [f"{k}={v}" for k, v in properties.items()])
+            if print_command:
+                self.print_command(args + [f"{k}={v}" for k, v in properties.items()])
             os.environ.update(properties)
             return 0, True
         elif args[0] == "set":
@@ -362,7 +391,8 @@ class LusFile:
                     f"'call' only supports .bat or .cmd files, got: {script}"
                 )
 
-            self.print_command(args)
+            if print_command:
+                self.print_command(args)
 
             # Run the batch file and capture environment changes
             # We do this by running the script and then dumping the environment with 'set'
@@ -430,7 +460,8 @@ class LusFile:
 
             return 0, True
         elif "/" in args[0] and not os.path.isabs(args[0]):
-            self.print_command(args)
+            if print_command:
+                self.print_command(args)
             subprocess.check_call([os.path.join(os.getcwd(), args[0])] + args[1:])
             return 0, True
         else:
@@ -449,7 +480,8 @@ class LusFile:
                                 f"Install it via {colored(shlex.join(install_cmd), 'blue', attrs=['bold'])}? [Y/n] "
                             )
                             if response.lower() in ["", "y", "yes"]:
-                                self.print_command(install_cmd)
+                                if print_command:
+                                    self.print_command(install_cmd)
                                 subprocess.check_call(install_cmd)
                 elif sys.platform == "linux":
                     if shutil.which("pkcon") and shutil.which("dnf"):
@@ -474,7 +506,8 @@ class LusFile:
                                             f"Install it via {colored(shlex.join(install_cmd), 'blue', attrs=['bold'])}? [Y/n] "
                                         )
                                         if response.lower() in ["", "y", "yes"]:
-                                            self.print_command(install_cmd)
+                                            if print_command:
+                                                self.print_command(install_cmd)
                                             # Change to temp directory to avoid pkcon conflicts with local files
                                             with (
                                                 tempfile.TemporaryDirectory()
@@ -488,9 +521,11 @@ class LusFile:
                                         break
                         except subprocess.CalledProcessError:
                             pass
-            self.print_command(args)
-            subprocess.check_call(args,
-                shell=os.name == 'nt' # required to run .bat, .cmd, etc. on Windows
+            if print_command:
+                self.print_command(args)
+            subprocess.check_call(
+                args,
+                shell=os.name == "nt",  # required to run .bat, .cmd, etc. on Windows
             )
             return 0, True
 
@@ -635,14 +670,17 @@ class LusFile:
                 continue
             if len(child.children) > 0:
                 if child.name in child_names:
-                    print(f"{colored('error:', 'red', attrs=['bold'])} Duplicate node name '{child.name}'", file=sys.stderr)
+                    print(
+                        f"{colored('error:', 'red', attrs=['bold'])} Duplicate node name '{child.name}'",
+                        file=sys.stderr,
+                    )
                     raise SystemExit(1)
                 child_names.add(child.name)
             if child.name == subcommand:
                 try:
                     remaining_args.remove(subcommand)
                 except ValueError:
-                    pass # if there was a script line before that used $args, it may already be removed
+                    pass  # if there was a script line before that used $args, it may already be removed
                 try:
                     # Once we've matched the subcommand, enforce leftover-argument checks inside it
                     self.check_args(child.children, remaining_args, True)
