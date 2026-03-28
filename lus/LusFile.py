@@ -4,6 +4,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 
@@ -427,25 +428,60 @@ class LusFile:
             subprocess.check_call([os.path.join(os.getcwd(), args[0])] + args[1:])
             return 0, True
         else:
-            if not shutil.which(args[0]): # check if args[0] is in PATH
-                if sys.platform == "darwin": # only macOS
-                    brew_path = shutil.which("brew")
-                    if brew_path:
+            if not shutil.which(args[0]):  # check if args[0] is in PATH
+                if sys.platform == "darwin":  # only macOS
+                    if shutil.which("brew"):
                         result = subprocess.check_output(
-                            [brew_path, "which-formula", args[0]],
-                            text=True
+                            ["brew", "which-formula", args[0]], text=True
                         )
                         formula = result.strip()
                         if formula:
+                            install_cmd = ["brew", "install", formula]
                             # ask [Y/n] if to install it now:
                             response = input(
                                 f"{colored('warning:', 'yellow', attrs=['bold'])} Command '{args[0]}' not found. "
-                                f"It is provided by the Homebrew package '{colored(formula, 'blue', attrs=['bold'])}'. "
-                                "Do you want to install it now? [Y/n] "
+                                f"Install it via {colored(shlex.join(install_cmd), 'blue', attrs=['bold'])}? [Y/n] "
                             )
                             if response.lower() in ["", "y", "yes"]:
-                                self.print_command([brew_path, "install", formula])
-                                subprocess.check_call([brew_path, "install", formula])
+                                self.print_command(install_cmd)
+                                subprocess.check_call(install_cmd)
+                elif sys.platform == "linux":
+                    if shutil.which("pkcon") and shutil.which("dnf"):
+                        try:
+                            result = subprocess.check_output(
+                                ["dnf", "provides", f"/usr/bin/{args[0]}"],
+                                text=True,
+                                stderr=subprocess.DEVNULL,
+                            )
+                            # dnf provides output format: "package-name : summary"
+                            for line in result.splitlines():
+                                if line.strip() and not line.startswith(" "):
+                                    # Extract package name from lines like "package-name-1.2.3-4.fc39.x86_64 : Summary"
+                                    package = line.split(":")[0].strip().split()[0]
+                                    # Remove version information to get base package name
+                                    # e.g., "git-2.43.0-1.fc39.x86_64" -> "git"
+                                    package_name = re.split(r"-\d+", package)[0]
+                                    if package_name:
+                                        install_cmd = ["pkcon", "install", package_name]
+                                        response = input(
+                                            f"{colored('warning:', 'yellow', attrs=['bold'])} Command '{args[0]}' not found. "
+                                            f"Install it via {colored(shlex.join(install_cmd), 'blue', attrs=['bold'])}? [Y/n] "
+                                        )
+                                        if response.lower() in ["", "y", "yes"]:
+                                            self.print_command(install_cmd)
+                                            # Change to temp directory to avoid pkcon conflicts with local files
+                                            with (
+                                                tempfile.TemporaryDirectory()
+                                            ) as tmpdir:
+                                                original_cwd = os.getcwd()
+                                                try:
+                                                    os.chdir(tmpdir)
+                                                    subprocess.check_call(install_cmd)
+                                                finally:
+                                                    os.chdir(original_cwd)
+                                        break
+                        except subprocess.CalledProcessError:
+                            pass
             self.print_command(args)
             subprocess.check_call(args,
                 shell=os.name == 'nt' # required to run .bat, .cmd, etc. on Windows
